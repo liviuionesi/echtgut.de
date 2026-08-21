@@ -9,7 +9,7 @@ Copied identically in structure from
 [liviuionesi/lmdb.dev](https://github.com/liviuionesi/lmdb.dev)'s own
 `CLAUDE.md`, at the project owner's explicit request, and adapted only
 where echtgut's actual shape differs (one Spring Boot app, not eight
-microservices — see `architecture.md` §7).
+microservices — see `ARCHITECTURE.md` §7).
 
 ## Before starting any work
 
@@ -67,11 +67,11 @@ Scrum specifically, and how this would change if it didn't)
 - GitHub Issues on `liviuionesi/echtgut.de` are the backlog.
   `.github/issues/PROJECT_ROADMAP.md` gives the phase-level narrative; the
   issues themselves (`gh issue list`) are the authoritative status.
-- Architecture reference: `architecture.md` (repo root) plus
+- Architecture reference: `ARCHITECTURE.md` (repo root) plus
   `docs/architecture/adr/` (one file per decision — add a new ADR for any
   new architectural decision, don't bury it in an issue comment).
 - No completed service exists yet to pattern-match against — this is a
-  bootstrap project. Follow `architecture.md` §3-4's package layout
+  bootstrap project. Follow `ARCHITECTURE.md` §3-4's package layout
   (`ingestion`, `curation`, `catalog`, `taxonomy`, `submission`) until a
   first real module sets the actual convention; once one exists, match
   it rather than inventing a second style.

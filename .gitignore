@@ -34,6 +34,9 @@ infrastructure/docker/models/
 .claude/.autonomous-lock
 .claude/.autonomous-halt
 
+# --- Claude Code harness-local session state (not project content) ---
+.claude/scheduled_tasks.lock
+
 # --- General ---
 .DS_Store
 *.log

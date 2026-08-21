@@ -7,7 +7,7 @@ A curated local deals & experiences marketplace for the German market —
 
 - [REQUIREMENTS.md](REQUIREMENTS.md) — product vision, functional and
   non-functional requirements.
-- [architecture.md](architecture.md) — technical design: data model,
+- [ARCHITECTURE.md](ARCHITECTURE.md) — technical design: data model,
   backend/frontend shape, hosting.
 - [.github/issues/PROJECT_ROADMAP.md](.github/issues/PROJECT_ROADMAP.md) —
   the Epic/Story/Task backlog and Sprint plan.
@@ -24,7 +24,7 @@ A curated local deals & experiences marketplace for the German market —
 - **Frontend**: Next.js (App Router), Tailwind CSS, shadcn/ui.
 - **Hosting**: frontend on Vercel; backend + Postgres via Docker Compose
   locally and Terraform-provisioned Azure AKS for cloud demos (see
-  architecture.md §5 and
+  ARCHITECTURE.md §5 and
   [docs/architecture/adr/001-zero-budget-azure-deploy.md](docs/architecture/adr/001-zero-budget-azure-deploy.md)).
 
 ## Local development
