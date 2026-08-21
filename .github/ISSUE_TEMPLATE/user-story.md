@@ -21,7 +21,7 @@ labels: user-story
 - [ ] Given <context>, when <action>, then <outcome>
 
 ## Definition of Ready
-- [ ] Meets [Definition of Ready](https://github.com/liviuionesi/lmdb.dev/blob/develop/docs/process/DEFINITION_OF_READY.md)
+- [ ] Meets [Definition of Ready](docs/process/DEFINITION_OF_READY.md)
 
 ## Story Points
 **Estimate:** <Fibonacci: 1 / 2 / 3 / 5 / 8 / 13 / 21>
@@ -34,7 +34,11 @@ labels: user-story
 - [ ] #
 
 ## Definition of Done
-- [ ] Meets [Definition of Done](https://github.com/liviuionesi/lmdb.dev/blob/develop/docs/process/DEFINITION_OF_DONE.md)
+- [ ] Meets [Definition of Done](docs/process/DEFINITION_OF_DONE.md)
+
+## Implementing Commits & Increment Promotion
+<!-- Direct links to implementing commit SHAs and the develop -> main promotion merge commit. -->
+- [ ] [Merge Commit <sha>](https://github.com/liviuionesi/echtgut.de/commit/<sha>): Merged develop → main
 
 ## Notes
 <!-- Only if something genuinely needs flagging. Not a running log. -->

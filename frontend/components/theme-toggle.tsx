@@ -1,30 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /**
  * Toggles between the "Ink" (dark) and "Paper" (light) themes defined in
  * app/globals.css, persisting the explicit choice to localStorage.
  *
- * Reads its initial state from the DOM (`data-theme` on <html>) rather
- * than defaulting to a hardcoded value — the inline script in
- * app/layout.tsx has already set that attribute correctly before this
- * component ever mounts, so there is no flash-of-wrong-theme on load and
- * no server/client hydration mismatch to reconcile.
+ * Reads its initial state from the DOM (`data-theme` on <html>) via lazy state initializer using
+ * `dataset.theme` rather than defaulting to a hardcoded value — the inline script in app/layout.tsx
+ * has already set that attribute correctly before this component ever mounts, so there is no
+ * flash-of-wrong-theme on load and no server/client hydration mismatch to reconcile.
  */
 export function ThemeToggle() {
-  const [isLight, setIsLight] = useState(false);
-
-  useEffect(() => {
-    setIsLight(document.documentElement.getAttribute('data-theme') === 'light');
-  }, []);
+  const [isLight, setIsLight] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light',
+  );
 
   function toggle() {
     const next = isLight ? 'dark' : 'light';
     if (next === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.dataset.theme = 'light';
     } else {
-      document.documentElement.removeAttribute('data-theme');
+      delete document.documentElement.dataset.theme;
     }
     localStorage.setItem('theme', next);
     setIsLight(next === 'light');

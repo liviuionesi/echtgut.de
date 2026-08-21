@@ -1,13 +1,16 @@
 # echtgut.de
 
+[![Backend CI](https://github.com/liviuionesi/echtgut.de/actions/workflows/backend-ci.yml/badge.svg?branch=develop)](https://github.com/liviuionesi/echtgut.de/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/liviuionesi/echtgut.de/actions/workflows/frontend-ci.yml/badge.svg?branch=develop)](https://github.com/liviuionesi/echtgut.de/actions/workflows/frontend-ci.yml)
+
 A curated local deals & experiences marketplace for the German market —
 "echt gut" (really good): trust through hand-review, not volume.
 
 ## Start here
 
-- [REQUIREMENTS.md](REQUIREMENTS.md) — product vision, functional and
+- [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) — product vision, functional and
   non-functional requirements.
-- [ARCHITECTURE.md](ARCHITECTURE.md) — technical design: data model,
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — technical design: data model,
   backend/frontend shape, hosting.
 - [.github/issues/PROJECT_ROADMAP.md](.github/issues/PROJECT_ROADMAP.md) —
   the Epic/Story/Task backlog and Sprint plan.
@@ -15,16 +18,16 @@ A curated local deals & experiences marketplace for the German market —
   runs (copied identically from
   [liviuionesi/lmdb.dev](https://github.com/liviuionesi/lmdb.dev), at the
   project owner's request).
-- [CLAUDE.md](CLAUDE.md) — the working contract for any Claude Code
+- [docs/CLAUDE.md](docs/CLAUDE.md) — the working contract for any Claude Code
   session (human-driven or scheduled) picking up work here.
 
 ## Stack
 
-- **Backend**: Spring Boot (Gradle), PostgreSQL, Flyway.
-- **Frontend**: Next.js (App Router), Tailwind CSS, shadcn/ui.
+- **Backend**: Spring Boot 4.1.1 (Gradle), PostgreSQL, Flyway.
+- **Frontend**: Next.js 15 (App Router), Tailwind CSS, TypeScript.
 - **Hosting**: frontend on Vercel; backend + Postgres via Docker Compose
   locally and Terraform-provisioned Azure AKS for cloud demos (see
-  ARCHITECTURE.md §5 and
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §5 and
   [docs/architecture/adr/001-zero-budget-azure-deploy.md](docs/architecture/adr/001-zero-budget-azure-deploy.md)).
 
 ## Local development

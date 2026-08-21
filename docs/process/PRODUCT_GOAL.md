@@ -28,5 +28,5 @@ This process is copied identically from
 `docs/process/`, at the user's explicit request — see
 [METHODOLOGY.md](METHODOLOGY.md) for why the process is deliberately
 kept separate from the product it's applied to, and
-[ARCHITECTURE.md](../../ARCHITECTURE.md) §7 for what was *not* copied
+[docs/ARCHITECTURE.md](../ARCHITECTURE.md) §7 for what was *not* copied
 (the system architecture itself).

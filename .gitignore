@@ -43,5 +43,6 @@ infrastructure/docker/models/
 .env
 .env.local
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.iml

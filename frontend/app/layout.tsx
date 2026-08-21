@@ -1,11 +1,14 @@
 import './globals.css';
+import { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { Fraunces, Inter } from 'next/font/google';
 
-// display: 'optional' — the font either loads in time for first paint or
-// the fallback stack is used for that visit, permanently. No swap, no
-// layout shift once text has rendered (CLS is a Lighthouse/NFR-2 metric,
-// not just a nicety here).
+/**
+ * Primary display font configuration (Fraunces variable font).
+ *
+ * Configured with `display: 'optional'` to guarantee zero Cumulative Layout Shift (CLS),
+ * meeting Core Web Vitals targets for Lighthouse and user experience.
+ */
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-display',
@@ -13,22 +16,31 @@ const fraunces = Fraunces({
   axes: ['opsz', 'SOFT', 'WONK'],
 });
 
+/**
+ * Primary body font configuration (Inter variable font).
+ *
+ * Configured with `display: 'optional'` for optimum rendering performance and stability.
+ */
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'optional',
 });
 
-export const metadata = {
+/**
+ * Root metadata configuration for SEO and social sharing.
+ */
+export const metadata: Metadata = {
   title: 'echtgut.de — Handverlesene lokale Entdeckungen',
   description: 'Geprüfte, authentische Empfehlungen und Angebote ohne Werbemüll.',
 };
 
-// Inline, synchronous, and deliberately NOT a React effect — this must run
-// before first paint to avoid a flash of the wrong theme. A useEffect-based
-// approach only fixes this after hydration, which is visibly too late.
-// Order of precedence: explicit saved choice > system preference > dark
-// (this brand's default — see globals.css).
+/**
+ * Synchronous inline theme initialization script.
+ *
+ * Runs before first paint to prevent Flash of Unstyled Content (FOUC) when switching
+ * between light and dark themes. Precedence: saved preference > system color scheme > dark default.
+ */
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
@@ -36,12 +48,27 @@ const THEME_INIT_SCRIPT = `
     var wantsLight = saved
       ? saved === 'light'
       : window.matchMedia('(prefers-color-scheme: light)').matches;
-    if (wantsLight) document.documentElement.setAttribute('data-theme', 'light');
+    if (wantsLight) document.documentElement.dataset.theme = 'light';
   } catch (e) {}
 })();
 `;
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+/**
+ * Props for the root layout component.
+ */
+interface RootLayoutProps {
+  /** Page content elements rendered inside the root HTML shell. */
+  children: ReactNode;
+}
+
+/**
+ * Root layout component providing structural HTML shell, global typography CSS variables,
+ * inline theme initialization script, and base body styling.
+ *
+ * @param props - Layout component properties containing page children.
+ * @returns The root HTML layout tree.
+ */
+export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
   return (
     <html lang="de" className={`${fraunces.variable} ${inter.variable}`}>
       <head>

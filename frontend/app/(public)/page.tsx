@@ -1,6 +1,14 @@
 import React from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+/**
+ * Public landing page component (`/`).
+ *
+ * Serves as the primary public entry point for visitors, displaying the brand title,
+ * curation badge, subtitle description, and interactive theme switcher button.
+ *
+ * @returns The rendered public home page React element.
+ */
 export default function PublicHomePage() {
   return (
     <main className="min-h-screen bg-bg text-fg">

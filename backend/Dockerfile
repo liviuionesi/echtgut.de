@@ -1,12 +1,12 @@
 # Multi-stage Dockerfile for echtgut-backend
-FROM eclipse-temurin:25-jdk-alpine AS builder
+FROM docker.io/library/eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app
 COPY gradle gradle
 COPY gradlew build.gradle settings.gradle ./
 COPY src src
 RUN ./gradlew clean bootJar -x test --no-daemon
 
-FROM eclipse-temurin:25-jre-alpine
+FROM docker.io/library/eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN addgroup -S echtgut && adduser -S echtgut -G echtgut
 USER echtgut:echtgut
