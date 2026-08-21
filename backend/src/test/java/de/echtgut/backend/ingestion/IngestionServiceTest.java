@@ -79,7 +79,7 @@ class IngestionServiceTest {
     // 3. Then title is updated but status remains REJECTED
     RawDeal updated = rawDealRepository.findBySourceRef("seed-deal-001").orElseThrow();
     assertThat(updated)
-        .extracting(RawDeal::getRawTitle, RawDeal::getStatus, RawDeal::getRejectionReason)
+        .extracting("rawTitle", "status", "rejectionReason")
         .containsExactly(
             "Bio-Bäckerei Brotgarten — Frisches Holzofenbrot",
             RawDealStatus.REJECTED,

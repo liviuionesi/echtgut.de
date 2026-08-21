@@ -30,11 +30,7 @@ class SeedRawDealSourceTest {
         .allSatisfy(
             deal ->
                 assertThat(deal)
-                    .extracting(
-                        RawDeal::getSource,
-                        RawDeal::getSourceRef,
-                        RawDeal::getRawTitle,
-                        RawDeal::getStatus)
+                    .extracting("source", "sourceRef", "rawTitle", "status")
                     .satisfies(
                         tuple -> {
                           assertThat(tuple.get(0)).isEqualTo("SEED");
