@@ -96,7 +96,7 @@ jobs:
 
       - name: Restore OWASP Dependency-Check NVD database cache
         id: dc-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: backend/.dependency-check-data
           key: dependency-check-nvd-v2-${{ steps.dc-week.outputs.week }}
@@ -158,7 +158,7 @@ jobs:
         # killed/wiped or corrupted run. If the scan above wiped
         # .dependency-check-data, this step just finds nothing to save.
         if: success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: backend/.dependency-check-data
           key: ${{ steps.dc-cache.outputs.cache-primary-key }}
