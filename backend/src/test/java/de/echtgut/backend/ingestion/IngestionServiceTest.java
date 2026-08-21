@@ -38,8 +38,9 @@ class IngestionServiceTest {
 
     // 3. Then candidate deals from SeedRawDealSource are inserted
     List<RawDeal> deals = rawDealRepository.findAll();
-    assertThat(deals).hasSizeGreaterThanOrEqualTo(3);
-    assertThat(deals).allMatch(d -> d.getStatus() == RawDealStatus.PENDING);
+    assertThat(deals)
+        .hasSizeGreaterThanOrEqualTo(3)
+        .allMatch(d -> d.getStatus() == RawDealStatus.PENDING);
   }
 
   @Test
@@ -77,8 +78,11 @@ class IngestionServiceTest {
 
     // 3. Then title is updated but status remains REJECTED
     RawDeal updated = rawDealRepository.findBySourceRef("seed-deal-001").orElseThrow();
-    assertThat(updated.getRawTitle()).isEqualTo("Bio-Bäckerei Brotgarten — Frisches Holzofenbrot");
-    assertThat(updated.getStatus()).isEqualTo(RawDealStatus.REJECTED);
-    assertThat(updated.getRejectionReason()).isEqualTo("Inaccurate details");
+    assertThat(updated)
+        .extracting(RawDeal::getRawTitle, RawDeal::getStatus, RawDeal::getRejectionReason)
+        .containsExactly(
+            "Bio-Bäckerei Brotgarten — Frisches Holzofenbrot",
+            RawDealStatus.REJECTED,
+            "Inaccurate details");
   }
 }

@@ -25,14 +25,22 @@ class SeedRawDealSourceTest {
   void testFetchCandidateDeals() {
     List<RawDeal> deals = seedRawDealSource.fetchCandidateDeals();
 
-    assertThat(deals).hasSizeGreaterThanOrEqualTo(3);
     assertThat(deals)
+        .hasSizeGreaterThanOrEqualTo(3)
         .allSatisfy(
-            deal -> {
-              assertThat(deal.getSource()).isEqualTo("SEED");
-              assertThat(deal.getSourceRef()).isNotBlank();
-              assertThat(deal.getRawTitle()).isNotBlank();
-              assertThat(deal.getStatus()).isEqualTo(RawDealStatus.PENDING);
-            });
+            deal ->
+                assertThat(deal)
+                    .extracting(
+                        RawDeal::getSource,
+                        RawDeal::getSourceRef,
+                        RawDeal::getRawTitle,
+                        RawDeal::getStatus)
+                    .satisfies(
+                        tuple -> {
+                          assertThat(tuple.get(0)).isEqualTo("SEED");
+                          assertThat((String) tuple.get(1)).isNotBlank();
+                          assertThat((String) tuple.get(2)).isNotBlank();
+                          assertThat(tuple.get(3)).isEqualTo(RawDealStatus.PENDING);
+                        }));
   }
 }
