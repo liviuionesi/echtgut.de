@@ -3,7 +3,7 @@ name: Docker Publish
 # Builds the backend image and pushes it to GHCR so deploy.yml has
 # something to roll out. Runs after Backend CI is green on `main` — never
 # publishes an unverified build. Frontend has no equivalent: it deploys
-# straight to Vercel (see architecture.md §5), not via a container image.
+# straight to Vercel (see ARCHITECTURE.md §5), not via a container image.
 on:
   workflow_run:
     workflows: ["Backend CI"]

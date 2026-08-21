@@ -133,6 +133,6 @@ it's on echtgut, it's good."
   enough until there's a team).
 
 ---
-See [architecture.md](architecture.md) for the technical design this
-implies, and [BACKLOG.md](BACKLOG.md) for the Epics/Stories/Tasks that
-deliver it.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the technical design this
+implies, and [.github/issues/PROJECT_ROADMAP.md](.github/issues/PROJECT_ROADMAP.md)
+for the Epics/Stories/Tasks that deliver it.

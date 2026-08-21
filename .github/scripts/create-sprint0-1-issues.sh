@@ -17,7 +17,7 @@ set -e
 
 REPO="liviuionesi/echtgut.de"
 OWNER="liviuionesi"
-PROJECT=1
+PROJECT=13
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 
@@ -44,13 +44,19 @@ create_issue() {
 }
 
 # set_fields URL STATUS PRIORITY SIZE ESTIMATE  (any field empty = skip it)
+# NOTE: proper if/fi, not `[ -n "$x" ] && cmd` as a bare statement — under
+# `set -e`, that bare form propagates the *test's own* failure (when $x
+# is empty) as this function's exit status and aborts the whole script.
+# Confirmed live: this exact shape silently killed the first run right
+# after Epic A. if/fi's exit status is 0 when the condition is false,
+# which sidesteps the trap without swallowing a genuine gh failure.
 set_fields() {
   local url="$1" status="$2" priority="$3" size="$4" estimate="$5"
   gh project item-add "$PROJECT" --owner "$OWNER" --url "$url" >/dev/null
-  [ -n "$status" ]   && gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Status"   --value "$status"   >/dev/null
-  [ -n "$priority" ] && gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Priority" --value "$priority" >/dev/null
-  [ -n "$size" ]     && gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Size"     --value "$size"     >/dev/null
-  [ -n "$estimate" ] && gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Estimate" --number "$estimate" >/dev/null
+  if [ -n "$status" ];   then gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Status"   --value "$status"    >/dev/null; fi
+  if [ -n "$priority" ]; then gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Priority" --value "$priority"  >/dev/null; fi
+  if [ -n "$size" ];     then gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Size"     --value "$size"      >/dev/null; fi
+  if [ -n "$estimate" ]; then gh project item-edit "$PROJECT" --owner "$OWNER" --url "$url" --field "Estimate" --number "$estimate" >/dev/null; fi
 }
 
 echo -e "${BLUE}=== Milestones (Sprints) ===${NC}"
@@ -84,7 +90,7 @@ Direct prerequisite — see docs/process/PRODUCT_GOAL.md.
 - [ ] #TBD_A2
 
 ## Notes
-Architecture reference: architecture.md. Deploy mechanism and why it's
+Architecture reference: ARCHITECTURE.md. Deploy mechanism and why it's
 Docker Compose + Terraform/Azure specifically:
 docs/architecture/adr/001-zero-budget-azure-deploy.md.
 EOF
@@ -130,7 +136,7 @@ echo -e "${GREEN}✓ Story A1: #$STORY_A1${NC}"
 TASK_A1_1=$(create_issue "[TASK] Scaffold Spring Boot Gradle project (backend/)" "task,backend" "Sprint 0" "$(cat <<EOF
 ## Task
 Scaffold the single-module Spring Boot Gradle project under \`backend/\`
-following the package layout in architecture.md §3
+following the package layout in ARCHITECTURE.md §3
 (ingestion/curation/catalog/taxonomy/submission), with Flyway and the
 Postgres driver wired to the local Docker Compose instance.
 
@@ -154,7 +160,7 @@ echo -e "${GREEN}✓ Task A1.1: #$TASK_A1_1${NC}"
 TASK_A1_2=$(create_issue "[TASK] Scaffold Next.js App Router project (frontend/)" "task,frontend" "Sprint 0" "$(cat <<EOF
 ## Task
 Scaffold the Next.js App Router project under \`frontend/\` with
-\`(public)\` and \`(admin)\` route groups (architecture.md §4), Tailwind
+\`(public)\` and \`(admin)\` route groups (ARCHITECTURE.md §4), Tailwind
 CSS and shadcn/ui installed.
 
 ## Parent Story
@@ -392,7 +398,7 @@ Direct prerequisite — see docs/process/PRODUCT_GOAL.md.
 - [ ] #$STORY_A2
 
 ## Notes
-Architecture reference: architecture.md. Deploy mechanism and why it's
+Architecture reference: ARCHITECTURE.md. Deploy mechanism and why it's
 Docker Compose + Terraform/Azure specifically:
 docs/architecture/adr/001-zero-budget-azure-deploy.md.
 EOF
@@ -425,8 +431,8 @@ echo -e "${GREEN}✓ Epic A native sub-issue links set${NC}"
 new_epic() { # title labels body -> number
   create_issue "[EPIC] $1" "epic,$2" "" "$3"
 }
-new_story() { # title labels milestone points size priority body -> number
-  create_issue "[STORY] $1" "user-story,$7,$2" "$3" "$8"
+new_story() { # title labels(incl. priority) milestone points size priority body(=$7) -> number
+  create_issue "[STORY] $1" "user-story,$2" "$3" "$7"
 }
 new_task() { # title labels milestone hours body -> number
   create_issue "[TASK] $1" "task,$2" "$3" "$5"
@@ -442,7 +448,7 @@ story_body() { # role goal benefit ac1 ac2 ac3 points milestone parent_epic note
 ## Acceptance Criteria (Given/When/Then)
 - [ ] $4
 - [ ] $5
-$( [ -n "$6" ] && echo "- [ ] $6" )
+$(if [ -n "$6" ]; then echo "- [ ] $6"; fi)
 
 ## Definition of Ready
 - [x] Meets [Definition of Ready](../../docs/process/DEFINITION_OF_READY.md)
@@ -524,19 +530,19 @@ link_parent "$STORY_B1" "$EPIC_B"
 echo -e "${GREEN}✓ Story B1: #$STORY_B1${NC}"
 
 TASK_B1_1=$(new_task "raw_deals table + Flyway migration + JPA entity + repository test" "backend,curation" "Sprint 1" "3" \
-  "$(task_body "Create the raw_deals table (architecture.md §2.1): Flyway migration, JPA entity, Spring Data repository, and a repository test proving the PENDING/REJECTED/PROMOTED state machine." "$STORY_B1" \
+  "$(task_body "Create the raw_deals table (ARCHITECTURE.md §2.1): Flyway migration, JPA entity, Spring Data repository, and a repository test proving the PENDING/REJECTED/PROMOTED state machine." "$STORY_B1" \
     "Migration applies cleanly on an empty database" "Repository test covers insert + status transition" "3" "")")
 set_fields "https://github.com/$REPO/issues/$TASK_B1_1" "Backlog" "" "" "3"
 link_parent "$TASK_B1_1" "$STORY_B1"
 
 TASK_B1_2=$(new_task "curated_experiences table + Flyway migration + JPA entity + repository test" "backend,curation" "Sprint 1" "3" \
-  "$(task_body "Create the curated_experiences table (architecture.md §2.2): Flyway migration, JPA entity, Spring Data repository, and a repository test." "$STORY_B1" \
+  "$(task_body "Create the curated_experiences table (ARCHITECTURE.md §2.2): Flyway migration, JPA entity, Spring Data repository, and a repository test." "$STORY_B1" \
     "Migration applies cleanly on an empty database" "Repository test covers a basic insert + slug uniqueness constraint" "3" "")")
 set_fields "https://github.com/$REPO/issues/$TASK_B1_2" "Backlog" "" "" "3"
 link_parent "$TASK_B1_2" "$STORY_B1"
 
 TASK_B1_3=$(new_task "RawDealSource adapter interface + one manual/seed adapter" "backend,ingestion" "Sprint 1" "3" \
-  "$(task_body "Define the RawDealSource adapter interface (architecture.md §3) and implement one concrete adapter (a manual/seed source) proving the interface shape before any real external feed is wired." "$STORY_B1" \
+  "$(task_body "Define the RawDealSource adapter interface (ARCHITECTURE.md §3) and implement one concrete adapter (a manual/seed source) proving the interface shape before any real external feed is wired." "$STORY_B1" \
     "Interface compiles and is used by at least one adapter" "Adding a second adapter later requires no scheduler changes" "3" "")")
 set_fields "https://github.com/$REPO/issues/$TASK_B1_3" "Backlog" "" "" "3"
 link_parent "$TASK_B1_3" "$STORY_B1"
@@ -569,7 +575,7 @@ link_parent "$STORY_C1" "$EPIC_C"
 echo -e "${GREEN}✓ Story C1: #$STORY_C1${NC}"
 
 TASK_C1_1=$(new_task "GET /api/admin/pending-deals + POST /api/admin/deals/{id}/reject" "backend,curation" "Sprint 1" "3" \
-  "$(task_body "Implement the pending-queue read endpoint and the reject endpoint (architecture.md §3)." "$STORY_C1" \
+  "$(task_body "Implement the pending-queue read endpoint and the reject endpoint (ARCHITECTURE.md §3)." "$STORY_C1" \
     "GET returns the next unreviewed PENDING deal (or 204 if none)" "POST reject sets status=REJECTED with an optional reason" "3" "")")
 set_fields "https://github.com/$REPO/issues/$TASK_C1_1" "Backlog" "" "" "3"; link_parent "$TASK_C1_1" "$STORY_C1"
 
@@ -636,7 +642,7 @@ TASK_D1_1=$(new_task "GET /api/experiences (filterable, paginated)" "backend,cat
 set_fields "https://github.com/$REPO/issues/$TASK_D1_1" "Backlog" "" "" "3"; link_parent "$TASK_D1_1" "$STORY_D1"
 
 TASK_D1_2=$(new_task "Next.js SSG/ISR listing + detail page templates, on-demand revalidation hook" "frontend,catalog" "" "6" \
-  "$(task_body "Build the (public) route group's listing and detail page templates (SSG/ISR), and the on-demand-revalidation webhook the promote endpoint calls (architecture.md §4)." "$STORY_D1" \
+  "$(task_body "Build the (public) route group's listing and detail page templates (SSG/ISR), and the on-demand-revalidation webhook the promote endpoint calls (ARCHITECTURE.md §4)." "$STORY_D1" \
     "A fresh Vercel build serves listing + detail pages with no client-side data fetch needed for first paint" "Promoting a deal triggers revalidation of its detail page within seconds" "6" "")")
 set_fields "https://github.com/$REPO/issues/$TASK_D1_2" "Backlog" "" "" "6"; link_parent "$TASK_D1_2" "$STORY_D1"
 

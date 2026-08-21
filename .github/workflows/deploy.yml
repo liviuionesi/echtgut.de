@@ -1,7 +1,7 @@
 name: Deploy
 
-# Smart Cloud Deploy Workflow (see architecture.md §5 and
-# docs/architecture/adr/002-zero-budget-azure-deploy.md).
+# Smart Cloud Deploy Workflow (see ARCHITECTURE.md §5 and
+# docs/architecture/adr/001-zero-budget-azure-deploy.md).
 # Reused from liviuionesi/lmdb.dev, trimmed to Azure only (echtgut has no
 # AWS target) and to the two workloads this project actually has.
 #

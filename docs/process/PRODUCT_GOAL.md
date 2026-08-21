@@ -5,7 +5,7 @@ The single overarching objective the whole Product Backlog serves (Scrum
 the German market — proving that "we only show you the good stuff" beats
 volume-based aggregation on conversion and repeat visits — built and run
 at near-$0 cost until it earns its own infrastructure spend (see
-[architecture.md](../../architecture.md) §5).
+[ARCHITECTURE.md](../../ARCHITECTURE.md) §5).
 
 Epics exist to deliver a piece of this goal. A Story that doesn't trace
 back to it, even loosely, is probably out of scope.
@@ -28,5 +28,5 @@ This process is copied identically from
 `docs/process/`, at the user's explicit request — see
 [METHODOLOGY.md](METHODOLOGY.md) for why the process is deliberately
 kept separate from the product it's applied to, and
-[architecture.md](../../architecture.md) §7 for what was *not* copied
+[ARCHITECTURE.md](../../ARCHITECTURE.md) §7 for what was *not* copied
 (the system architecture itself).
