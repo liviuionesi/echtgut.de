@@ -44,6 +44,7 @@ class EchtgutBackendApplicationTests {
     // 1. Given main method parameters
     // 2. When main method is executed
     // 3. Then no exception is thrown
-    EchtgutBackendApplication.main(new String[] {"--spring.profiles.active=test"});
+    EchtgutBackendApplication.main(
+        new String[] {"--spring.profiles.active=test", "--server.port=0"});
   }
 }

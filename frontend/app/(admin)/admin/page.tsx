@@ -3,6 +3,14 @@
 import React from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+/**
+ * Curator admin dashboard page component (`/admin`).
+ *
+ * Provides the administrative interface for curators to inspect raw deal feeds,
+ * refine submissions, and approve promotion to curated experience listings.
+ *
+ * @returns The rendered admin dashboard React element.
+ */
 export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-bg p-8 text-fg">
