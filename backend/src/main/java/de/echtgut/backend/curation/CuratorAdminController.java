@@ -1,7 +1,10 @@
 package de.echtgut.backend.curation;
 
+import de.echtgut.backend.curation.dto.CuratedExperienceResponse;
+import de.echtgut.backend.curation.dto.PromoteDealRequest;
 import de.echtgut.backend.curation.dto.RawDealResponse;
 import de.echtgut.backend.curation.dto.RejectDealRequest;
+import jakarta.validation.Valid;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * REST controller exposing endpoints for the Curator Admin Portal.
  *
- * <p>Provides pending review queue inspection and rejection actions.
+ * <p>Provides pending review queue inspection, rejection, and promotion actions.
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -53,5 +56,19 @@ public class CuratorAdminController {
     String reason = request != null ? request.reason() : null;
     RawDeal rejected = curationService.rejectDeal(id, reason);
     return ResponseEntity.ok(RawDealResponse.fromEntity(rejected));
+  }
+
+  /**
+   * Promotes a raw candidate deal into a curated experience with validation and upserting.
+   *
+   * @param id Unique raw deal candidate identifier.
+   * @param request Promotion payload with required editorial fields and coordinates.
+   * @return HTTP 200 OK with {@link CuratedExperienceResponse}.
+   */
+  @PostMapping("/deals/{id}/promote")
+  public ResponseEntity<CuratedExperienceResponse> promoteDeal(
+      @PathVariable UUID id, @Valid @RequestBody PromoteDealRequest request) {
+    CuratedExperience promoted = curationService.promoteDeal(id, request);
+    return ResponseEntity.ok(CuratedExperienceResponse.fromEntity(promoted));
   }
 }

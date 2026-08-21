@@ -26,4 +26,13 @@ public interface CurationService {
    * @return Updated RawDeal entity.
    */
   RawDeal rejectDeal(UUID rawDealId, String reason);
+
+  /**
+   * Promotes a raw candidate deal into a curated public experience with validation and upserting.
+   *
+   * @param rawDealId Raw deal candidate UUID.
+   * @param request Validated curator promotion request details.
+   * @return Saved or updated CuratedExperience entity.
+   */
+  CuratedExperience promoteDeal(UUID rawDealId, de.echtgut.backend.curation.dto.PromoteDealRequest request);
 }
