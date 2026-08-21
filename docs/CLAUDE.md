@@ -177,10 +177,10 @@ back to reality — this section is that force.
   infeasible, rescope the acceptance criteria to match reality in one line
   — don't leave it unchecked forever, and don't pile on caveats instead of
   rescoping.
-- **Bi-Directional Commit-to-Task Traceability (mandatory — applies across Claude Code & Antigravity IDE):**
-  1. **Task → Commit Linkage:** Every completed Task and Story MUST be explicitly linked to its implementing commit(s) SHA(s) with clickable links in GitHub issue bodies, issue closing comments, and in `task.md`.
-  2. **Commit → Task Linkage:** Every git commit subject MUST reference the exact GitHub issue/task number (e.g., `feat: Implement X (#12)`), enforced by the `.githooks/commit-msg` hook.
-  3. **Universal Enforcement:** This rule is binding regardless of whether work is performed via Claude Code, Antigravity IDE, or manual developer sessions.
+- **Bi-Directional Commit Traceability Hierarchy (mandatory — applies across Claude Code & Antigravity IDE):**
+  1. **Task Level (Micro-Traceability):** Specific implementation commits land here. Commit subjects reference the Task ID (e.g., `feat: Scaffold Spring Boot (#9)`). Task issue descriptions, comments, and `task.md` list direct commit links to the changed source code.
+  2. **Story Level (Increment Traceability):** Summarizes completed child Tasks (with their commit links) + lists the **Increment Promotion / Merge Commit** (e.g., `0127263: Merge develop -> main`) when the Story completes.
+  3. **Epic Level (Roadmap Traceability):** Aggregates completed Stories without micro-commit clutter, keeping the high-level roadmap clean and readable.
 
 ## Code documentation standard (mandatory)
 
