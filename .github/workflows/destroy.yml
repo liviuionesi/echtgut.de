@@ -1,0 +1,81 @@
+name: Destroy
+
+# Manual-only cloud infra teardown. Runs `terraform destroy` against Azure
+# AKS to cleanly release all cloud resources back to $0 spend when a live
+# demo concludes. Reused from liviuionesi/lmdb.dev, trimmed to Azure only.
+on:
+  workflow_dispatch:
+    inputs:
+      passphrase:
+        description: "Destruction Authorization Passphrase"
+        required: true
+        type: string
+      confirmation:
+        description: "Type 'DESTROY' to confirm irreversible teardown"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  destroy-azure:
+    name: Destroy (azure)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/terraform/azure
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - name: Validate Destruction Authorization
+        env:
+          INPUT_PASSPHRASE: ${{ github.event.inputs.passphrase }}
+          SECRET_PASSPHRASE: ${{ secrets.DEPLOY_PASSPHRASE }}
+          CONFIRMATION: ${{ github.event.inputs.confirmation }}
+        run: |
+          if [ -z "$SECRET_PASSPHRASE" ]; then
+            echo "::error::❌ Repository secret DEPLOY_PASSPHRASE is not configured in GitHub Secrets. Action blocked."
+            exit 1
+          fi
+          if [ -z "$INPUT_PASSPHRASE" ] || [ "$INPUT_PASSPHRASE" != "$SECRET_PASSPHRASE" ]; then
+            echo "::error::❌ Invalid destruction authorization passphrase provided. Aborted."
+            exit 1
+          fi
+          if [ "$CONFIRMATION" != "DESTROY" ]; then
+            echo "::error::❌ Confirmation must be exactly 'DESTROY'. Aborted."
+            exit 1
+          fi
+          echo "✅ Destruction authorization validated successfully."
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "~1.15"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: terraform init
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}"
+
+      - name: terraform destroy
+        run: |
+          terraform destroy -auto-approve -input=false \
+            -var="alert_emails=[\"${{ vars.ALERT_EMAIL }}\"]" \
+            -var="budget_start_date=$(date -u +%Y-%m-01T00:00:00Z)"

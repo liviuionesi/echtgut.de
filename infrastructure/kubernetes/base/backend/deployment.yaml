@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: backend
+          # Built by .github/workflows/docker-publish.yml once it exists —
+          # placeholder name, rewritten per-overlay via kustomize `images:`
+          # (see overlays/azure/kustomization.yaml).
+          image: echtgut/backend:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: backend-config
+          env:
+            # index 0 by convention — overlays patch this by path
+            # (spec/template/spec/containers/0/env/0/value) to tune heap
+            # sizing per node, same pattern lmdb.dev uses.
+            - name: JAVA_OPTS
+              value: "-Xms256m -Xmx512m"
+            - name: POSTGRES_URL
+              value: jdbc:postgresql://postgres:5432/echtgut
+            - name: POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: echtgut-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: echtgut-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: echtgut-secrets
+                  key: JWT_SECRET
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 224Mi
+              ephemeral-storage: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 256Mi

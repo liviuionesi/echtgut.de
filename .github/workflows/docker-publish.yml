@@ -1,0 +1,41 @@
+name: Docker Publish
+
+# Builds the backend image and pushes it to GHCR so deploy.yml has
+# something to roll out. Runs after Backend CI is green on `main` — never
+# publishes an unverified build. Frontend has no equivalent: it deploys
+# straight to Vercel (see architecture.md §5), not via a container image.
+on:
+  workflow_run:
+    workflows: ["Backend CI"]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/echtgut-backend:latest
+            ghcr.io/${{ github.repository_owner }}/echtgut-backend:${{ github.event.workflow_run.head_sha }}

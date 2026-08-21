@@ -1,0 +1,29 @@
+name: Project Board Automation
+
+# Trimmed for #28: this repo has no PR workflow (CLAUDE.md — single
+# collaborator commits straight to main), so the pull_request/
+# pull_request_review triggers and their jobs (auto-label-by-path,
+# link-pr-to-issue, notify-ready-for-review, celebrate-merge) never had
+# anything to act on and are removed rather than left as dead code. The
+# issues trigger also previously listed assigned/closed/reopened, none of
+# which any job handled — every run on those actions completed with
+# conclusion "skipped" (see validation 2026-07-21). Only "opened" has a
+# matching job, so that's the only type left.
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-assign-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-assign issue to creator
+        uses: actions/github-script@v9
+        with:
+          script: |
+            github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [context.actor]
+            });

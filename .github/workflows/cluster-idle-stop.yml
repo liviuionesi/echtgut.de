@@ -1,0 +1,113 @@
+name: Cluster Idle Auto-Stop
+
+# Scheduled watchdog: every 10 minutes, asks the live backend how long
+# it's been idle and stops the AKS cluster once that crosses 1 hour.
+# Does NOT destroy anything: same `az aks stop` as a manual stop would
+# do — data on the Postgres PVC is preserved. Reused from
+# liviuionesi/lmdb.dev, trimmed to Azure only.
+#
+# Requires the backend to expose the same /actuator/activity idle-seconds
+# endpoint lmdb.dev's gateway does — track that as its own Task before
+# relying on this workflow (see BACKLOG epic F or a follow-up Sprint).
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  check:
+    name: Check backend idle time
+    runs-on: ubuntu-latest
+    outputs:
+      should_stop: ${{ steps.eval.outputs.should_stop }}
+      idle_seconds: ${{ steps.eval.outputs.idle_seconds }}
+    steps:
+      - name: Probe /actuator/activity
+        id: eval
+        env:
+          BACKEND_URL: https://api.echtgut.de
+          IDLE_THRESHOLD_SECONDS: 3600
+        run: |
+          HTTP_CODE="$(curl -s -o /tmp/activity.json -w "%{http_code}" --max-time 8 "${BACKEND_URL}/actuator/activity" || echo "000")"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ℹ️ Backend unreachable (HTTP ${HTTP_CODE}) — already stopped or never started. Nothing to do."
+            echo "should_stop=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          IDLE_SECONDS="$(grep -o '"idleSeconds":[0-9]*' /tmp/activity.json | grep -o '[0-9]*' || echo "")"
+          if [ -z "$IDLE_SECONDS" ]; then
+            echo "⚠️ Activity endpoint reachable but idleSeconds missing from response. Skipping this run."
+            echo "should_stop=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "📊 Idle for ${IDLE_SECONDS}s / ${IDLE_THRESHOLD_SECONDS}s threshold."
+          echo "idle_seconds=${IDLE_SECONDS}" >> "$GITHUB_OUTPUT"
+          if [ "$IDLE_SECONDS" -ge "$IDLE_THRESHOLD_SECONDS" ]; then
+            echo "should_stop=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_stop=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  stop-azure:
+    name: Stop AKS (if idle and running)
+    needs: check
+    if: needs.check.outputs.should_stop == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/terraform/azure
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "~1.15"
+
+      - name: Terraform init (read state only)
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}"
+
+      - name: Resolve cluster coordinates from state
+        id: tf
+        run: |
+          echo "rg=$(terraform output -raw resource_group_name 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
+          echo "cluster=$(terraform output -raw cluster_name 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
+
+      - name: Stop AKS cluster if running
+        if: steps.tf.outputs.rg != '' && steps.tf.outputs.cluster != ''
+        run: |
+          STATE=$(az aks show \
+            --resource-group "${{ steps.tf.outputs.rg }}" \
+            --name "${{ steps.tf.outputs.cluster }}" \
+            --query "powerState.code" -o tsv 2>/dev/null || echo "Unknown")
+          if [ "$STATE" == "Running" ]; then
+            az aks stop \
+              --resource-group "${{ steps.tf.outputs.rg }}" \
+              --name "${{ steps.tf.outputs.cluster }}"
+            echo "🛑 AKS stopped after ${{ needs.check.outputs.idle_seconds }}s idle. Compute cost: \$0. Data preserved on the Postgres PVC."
+          else
+            echo "ℹ️ AKS power state is '${STATE}', not Running — nothing to stop."
+          fi

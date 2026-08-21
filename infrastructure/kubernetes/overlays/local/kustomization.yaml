@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Local Kubernetes parity (podman/minikube/k3d) — the same manifests the
+# Azure overlay deploys, exercised locally before ever touching cloud
+# spend. For day-to-day development, infrastructure/docker/docker-compose.yml
+# is faster; this overlay exists for verifying the Kubernetes path itself
+# works before `terraform apply` (see architecture.md §5).
+resources:
+  - ../../base/backend
+  - ../../base/postgres
+
+secretGenerator:
+  - name: echtgut-secrets
+    envs:
+      - secrets.env
+
+images:
+  - name: echtgut/backend
+    newName: echtgut/backend
+    newTag: local # built locally (docker build), never pulled from a registry

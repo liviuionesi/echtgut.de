@@ -1,0 +1,36 @@
+#!/bin/sh
+# Blocks a commit if staged code doesn't compile — a hard gate, not just
+# the agent's own judgment. Scoped to what's actually staged, so this
+# stays fast. Installed via `git config core.hooksPath .githooks`.
+set -eu
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+FAIL=0
+
+# Backend: compile only if a staged file actually touches it — single
+# Gradle module (backend/), unlike lmdb.dev's per-module multi-project
+# layout, so there's no module name to detect, just presence.
+if printf '%s\n' "$STAGED" | grep -qE '^backend/src/'; then
+  echo "pre-commit: compiling backend (staged changes touched it)"
+  if ! (cd backend && ./gradlew compileJava compileTestJava -q --console=plain); then
+    echo "pre-commit: compile failed — fix before committing." >&2
+    FAIL=1
+  fi
+fi
+
+# Frontend: a fast type check on the whole frontend project when any
+# staged file touches it — `tsc --noEmit` is quick enough at this size to
+# run whole-project rather than per-file (unlike a JS syntax-only check,
+# TypeScript's checker isn't meaningfully single-file anyway).
+if printf '%s\n' "$STAGED" | grep -qE '^frontend/(src|app)/.*\.(ts|tsx)$'; then
+  echo "pre-commit: type-checking frontend (staged changes touched it)"
+  if ! (cd frontend && npx tsc --noEmit); then
+    echo "pre-commit: type check failed — fix before committing." >&2
+    FAIL=1
+  fi
+fi
+
+exit $FAIL

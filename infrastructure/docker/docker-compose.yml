@@ -1,0 +1,140 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    container_name: echtgut-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-echtgut}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - echtgut-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-echtgut}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: echtgut-backend
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - echtgut-network
+    environment:
+      SPRING_APPLICATION_NAME: echtgut-backend
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-echtgut}
+      POSTGRES_USERNAME: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Database Management UI (optional). Behind the `dev-tools` profile so an
+  # unauthenticated DB browser never runs by default:
+  # docker compose --profile dev-tools up -d
+  adminer:
+    image: docker.io/library/adminer:latest
+    container_name: echtgut-adminer
+    profiles: ["dev-tools"]
+    ports:
+      - "${ADMINER_PORT:-9081}:8080"
+    networks:
+      - echtgut-network
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------
+  # SonarQube static analysis. Behind the `sonar` profile so the normal
+  # stack never starts this heavy tool. Bring it up on demand:
+  #   docker compose --profile sonar up -d
+  # Only useful once the repo is public (SonarCloud free tier) or a paid
+  # Sonar plan is configured — see backend-ci.yml's SonarQube step.
+  # ---------------------------------------------------------------------
+  sonar-db:
+    image: docker.io/library/postgres:17-alpine
+    container_name: echtgut-sonar-db
+    profiles: ["sonar"]
+    environment:
+      POSTGRES_USER: ${SONAR_DB_USER:-sonar}
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      POSTGRES_DB: ${SONAR_DB_NAME:-sonar}
+    volumes:
+      - sonarqube_db_data:/var/lib/postgresql/data
+    networks:
+      - echtgut-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SONAR_DB_USER:-sonar} -d ${SONAR_DB_NAME:-sonar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  sonarqube:
+    image: docker.io/library/sonarqube:community
+    container_name: echtgut-sonarqube
+    profiles: ["sonar"]
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    ports:
+      - "${SONAR_HOST_PORT:-9010}:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/${SONAR_DB_NAME:-sonar}
+      SONAR_JDBC_USERNAME: ${SONAR_DB_USER:-sonar}
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - echtgut-network
+    # SonarQube's Elasticsearch needs a high mmap limit:
+    #   sudo sysctl -w vm.max_map_count=262144
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 -O- http://localhost:9000/api/system/status 2>/dev/null | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  sonarqube_db_data:
+    driver: local
+  sonarqube_data:
+    driver: local
+  sonarqube_extensions:
+    driver: local
+  sonarqube_logs:
+    driver: local
+
+networks:
+  echtgut-network:
+    driver: bridge
+    name: echtgut-network

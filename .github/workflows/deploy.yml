@@ -1,0 +1,144 @@
+name: Deploy
+
+# Smart Cloud Deploy Workflow (see architecture.md §5 and
+# docs/architecture/adr/002-zero-budget-azure-deploy.md).
+# Reused from liviuionesi/lmdb.dev, trimmed to Azure only (echtgut has no
+# AWS target) and to the two workloads this project actually has.
+#
+# 1. Protected by mandatory passphrase authorization against secrets.DEPLOY_PASSPHRASE.
+# 2. Self-healing / smart lifecycle:
+#    - If the cluster is Stopped (e.g. from the 1-hour idle auto-stop), starts it.
+#    - If the cluster was Destroyed (no Terraform state), provisions it.
+# 3. Rolls out the backend Deployment and the Postgres StatefulSet.
+# 4. Updates DuckDNS automatically.
+
+on:
+  workflow_dispatch:
+    inputs:
+      passphrase:
+        description: "Deployment Authorization Passphrase"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+  deployments: write
+
+jobs:
+  deploy-azure:
+    name: Deploy (azure)
+    runs-on: ubuntu-latest
+    environment:
+      name: azure-cloud
+      url: https://api.echtgut.de
+    defaults:
+      run:
+        working-directory: infrastructure/terraform/azure
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Validate Deployment Passphrase
+        env:
+          INPUT_PASSPHRASE: ${{ github.event.inputs.passphrase }}
+          SECRET_PASSPHRASE: ${{ secrets.DEPLOY_PASSPHRASE }}
+        run: |
+          if [ -z "$SECRET_PASSPHRASE" ]; then
+            echo "::error::❌ Repository secret DEPLOY_PASSPHRASE is not configured in GitHub Secrets. Action blocked."
+            exit 1
+          fi
+          if [ -z "$INPUT_PASSPHRASE" ] || [ "$INPUT_PASSPHRASE" != "$SECRET_PASSPHRASE" ]; then
+            echo "::error::❌ Invalid deployment authorization passphrase provided. Deployment aborted."
+            exit 1
+          fi
+          echo "✅ Passphrase validated successfully."
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "~1.15"
+
+      - name: Terraform init
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}"
+
+      - name: Smart Infra Check (Auto-Wake or Auto-Provision)
+        id: infra
+        run: |
+          RG=$(terraform output -raw resource_group_name 2>/dev/null || echo "")
+          CLUSTER=$(terraform output -raw cluster_name 2>/dev/null || echo "")
+
+          if [ -z "$RG" ] || [ -z "$CLUSTER" ]; then
+            echo "🚀 Infra not found in Terraform state. Auto-provisioning AKS with Terraform..."
+            terraform apply -auto-approve -input=false \
+              -var="alert_emails=[\"${{ vars.ALERT_EMAIL }}\"]" \
+              -var="budget_start_date=$(date -u +%Y-%m-01T00:00:00Z)"
+            RG=$(terraform output -raw resource_group_name)
+            CLUSTER=$(terraform output -raw cluster_name)
+          else
+            echo "🔍 Checking cluster power state for $CLUSTER in $RG..."
+            STATE=$(az aks show --resource-group "$RG" --name "$CLUSTER" --query "powerState.code" -o tsv 2>/dev/null || echo "NotFound")
+            echo "  Current Power State: $STATE"
+
+            if [ "$STATE" == "Stopped" ]; then
+              echo "⚡ Cluster is Stopped. Waking up AKS cluster..."
+              az aks start --resource-group "$RG" --name "$CLUSTER"
+            elif [ "$STATE" == "NotFound" ]; then
+              echo "🚀 Cluster resource not found in Azure. Re-provisioning..."
+              terraform apply -auto-approve -input=false \
+                -var="alert_emails=[\"${{ vars.ALERT_EMAIL }}\"]" \
+                -var="budget_start_date=$(date -u +%Y-%m-01T00:00:00Z)"
+              RG=$(terraform output -raw resource_group_name)
+              CLUSTER=$(terraform output -raw cluster_name)
+            fi
+          fi
+
+          echo "resource_group=$RG" >> "$GITHUB_OUTPUT"
+          echo "cluster_name=$CLUSTER" >> "$GITHUB_OUTPUT"
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group "${{ steps.infra.outputs.resource_group }}" \
+            --name "${{ steps.infra.outputs.cluster_name }}" \
+            --overwrite-existing
+
+      - name: kubectl apply -k overlays/azure
+        run: kubectl apply -k ../../kubernetes/overlays/azure
+
+      - name: Wait for full workload rollout
+        run: |
+          echo "⏳ Verifying application deployment..."
+          kubectl rollout status deployment/backend --timeout=180s
+          echo "⏳ Verifying database statefulset..."
+          kubectl rollout status statefulset/postgres --timeout=180s
+
+      - name: Update Dynamic DNS
+        env:
+          DUCKDNS_DOMAIN: ${{ vars.DUCKDNS_DOMAIN }}
+          DUCKDNS_TOKEN: ${{ secrets.DUCKDNS_TOKEN }}
+        run: |
+          NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' || true)
+          if [ -n "$NODE_IP" ] && [ -n "$DUCKDNS_TOKEN" ]; then
+            ../../scripts/update-duckdns.sh "$NODE_IP"
+            echo "✅ DuckDNS updated → $NODE_IP"
+          else
+            echo "ℹ️ DuckDNS update skipped (missing IP or DUCKDNS_TOKEN)"
+          fi

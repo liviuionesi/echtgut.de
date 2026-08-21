@@ -1,0 +1,58 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# echtgut's cloud slice: one backend + one Postgres — there's no
+# Discovery/Config/Kafka/Zipkin infra layer to omit here because there
+# never was one (single Spring Boot app, see architecture.md §7).
+# Plus caddy-tls.yaml: TLS termination for the backend's plain-HTTP
+# NodePort, since this overlay has no LoadBalancer/ingress-nginx (both
+# bill hourly — see infrastructure/terraform/azure/variables.tf).
+resources:
+  - ../../base/backend
+  - ../../base/postgres
+  - caddy-tls.yaml
+
+secretGenerator:
+  - name: echtgut-secrets
+    envs:
+      - secrets.env
+
+images:
+  - name: echtgut/backend
+    newName: ghcr.io/liviuionesi/echtgut-backend
+    newTag: latest # docker-publish.yml pushes both :latest and :${GIT_SHA}; deploy always rolls out :latest
+
+patches:
+  # No Standard Load Balancer / NAT gateway for this overlay (both bill
+  # hourly): the backend is reached directly on the node's public IP, so
+  # its Service has to be NodePort instead of the base's ClusterIP. 30080
+  # must match modules/network's demo_inbound_port in
+  # infrastructure/terraform (that's the port opened in the NSG).
+  - target:
+      kind: Service
+      name: backend
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30080
+  # Free-tier node sizing: -XX:MaxRAMPercentage=60 keeps the JVM heap
+  # inside the container memory limit instead of a fixed -Xmx, which can
+  # OOM-kill on a small node once Postgres/OS overhead are accounted for.
+  # -Djava.net.preferIPv4Stack=true: lmdb.dev hit this live on its own AKS
+  # overlay — this network's DNS resolves external hosts to IPv6-only
+  # addresses the overlay network has no route for, and the JVM tries the
+  # AAAA record first, hanging every outbound call until a circuit
+  # breaker times out. Harmless everywhere else, so set unconditionally.
+  - target:
+      kind: Deployment
+      name: backend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: "-XX:MaxRAMPercentage=60 -Xss256k -Djava.net.preferIPv4Stack=true"
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always

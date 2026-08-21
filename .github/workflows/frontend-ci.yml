@@ -1,0 +1,53 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  web:
+    name: Web (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Dependency/security scan (#105, #131)
+        run: npm audit --audit-level=moderate
+
+      # Coverage gate matching the backend's JaCoCo threshold (see
+      # docs/process/DEFINITION_OF_DONE.md) — exclude bootstrap wiring and
+      # generated API-client types, not real logic, from the threshold.
+      - name: Run tests with coverage
+        run: npm test -- --coverage
+        env:
+          CI: true
+
+      - name: Build application
+        run: npm run build
+        env:
+          CI: true
