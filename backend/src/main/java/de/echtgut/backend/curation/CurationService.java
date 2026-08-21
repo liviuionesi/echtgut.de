@@ -1,5 +1,6 @@
 package de.echtgut.backend.curation;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -11,10 +12,18 @@ import java.util.UUID;
 public interface CurationService {
 
   /**
-   * Rejects a pending raw deal.
+   * Retrieves the next unreviewed raw deal in the pending queue (FIFO order).
+   *
+   * @return Optional containing the next pending raw deal, or empty if queue is empty.
+   */
+  Optional<RawDeal> getNextPendingDeal();
+
+  /**
+   * Rejects a pending raw deal with an optional curator reason.
    *
    * @param rawDealId Unique identifier of the deal to reject.
    * @param reason Explanation for rejection.
+   * @return Updated RawDeal entity.
    */
-  void rejectDeal(UUID rawDealId, String reason);
+  RawDeal rejectDeal(UUID rawDealId, String reason);
 }

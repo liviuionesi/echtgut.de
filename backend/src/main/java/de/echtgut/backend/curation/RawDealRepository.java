@@ -25,6 +25,14 @@ public interface RawDealRepository extends JpaRepository<RawDeal, UUID> {
   List<RawDeal> findByStatus(RawDealStatus status);
 
   /**
+   * Finds the oldest unreviewed raw deal in the pending queue.
+   *
+   * @param status Review status (typically PENDING).
+   * @return Optional containing the next pending deal if available.
+   */
+  Optional<RawDeal> findFirstByStatusOrderByIngestedAtAsc(RawDealStatus status);
+
+  /**
    * Counts the number of raw deals in a specific review status.
    *
    * @param status Review status filter.
