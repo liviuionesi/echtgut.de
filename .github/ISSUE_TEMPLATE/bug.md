@@ -25,5 +25,9 @@ labels: bug
 - [ ] Fixed and verified live
 - [ ] Regression test added
 
+## Implementing Commits & Fix Verification
+<!-- Direct links to implementing bug fix commits (e.g., [Commit <sha>](https://github.com/liviuionesi/echtgut.de/commit/<sha>)) and regression tests. -->
+- [ ] [Commit <sha>](https://github.com/liviuionesi/echtgut.de/commit/<sha>): <fix description>
+
 ## Notes
 <!-- Only if something genuinely needs flagging. Not a running log. -->

@@ -22,6 +22,10 @@ labels: task
 - [ ]
 - [ ]
 
+## Implementing Commits & Code
+<!-- Direct links to implementing git commits (e.g., [Commit <sha>](https://github.com/liviuionesi/echtgut.de/commit/<sha>)) and changed files. -->
+- [ ] [Commit <sha>](https://github.com/liviuionesi/echtgut.de/commit/<sha>): <description>
+
 ## Estimate
 **Hours:** <Tasks are hour-estimated, not pointed — points size Stories, hours size the within-Sprint work of implementing one>
 
