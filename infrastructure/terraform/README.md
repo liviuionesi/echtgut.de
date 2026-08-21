@@ -1,7 +1,7 @@
 # Terraform — Azure
 
 Provisions an ephemeral AKS cluster for cloud demos. See
-[ARCHITECTURE.md §5](../../ARCHITECTURE.md) and
+[docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md) and
 [docs/architecture/adr/001-zero-budget-azure-deploy.md](../../docs/architecture/adr/001-zero-budget-azure-deploy.md)
 for why this exists and what it deliberately reuses from
 [liviuionesi/lmdb.dev](https://github.com/liviuionesi/lmdb.dev).
