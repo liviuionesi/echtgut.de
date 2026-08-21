@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ['selector', '[data-theme="dark"]'],
+  // No `darkMode`/`dark:` variant in use — theming is done via the
+  // `bg`/`fg`/`accent`/... token classes below, which resolve through CSS
+  // custom properties that app/globals.css redefines per data-theme
+  // attribute (see the ThemeToggle component). A `dark:` variant would be
+  // redundant with that and easy to drift out of sync with it.
   content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {

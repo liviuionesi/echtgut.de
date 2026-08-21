@@ -78,6 +78,12 @@ it's on echtgut, it's good."
 - **FR-4.4** The site is served primarily in German (`de`); the
   architecture must not preclude adding `en` later (i18n-ready routing,
   not necessarily i18n-complete at MVP).
+- **FR-4.5** *(added post-MVP-draft, at the project owner's request)* The
+  site supports a dark theme ("Ink," the default) and a light theme
+  ("Paper"), toggleable and persisted per visitor, with no flash of the
+  wrong theme on load. This is a brand decision, not a compliance
+  checkbox — see ARCHITECTURE.md §4 for the token system and why dark is
+  the default.
 
 ### FR-5 Admin / Curator Portal
 - **FR-5.1** Authenticated, role-gated (`CURATOR`/`ADMIN`) — never
@@ -121,6 +127,18 @@ it's on echtgut, it's good."
 - **NFR-7 Observability (lightweight).** Actuator health + structured
   logs from day one; defer full metrics/tracing stacks until there's
   real traffic to justify the operational overhead.
+- **NFR-8 Frontend quality gates** *(added post-MVP-draft, at the project
+  owner's request — "not only looks good but performs on top score on
+  Lighthouse, and is fully tested")*:
+  - Lighthouse (desktop): Performance ≥ 90, Accessibility ≥ 95,
+    Best Practices ≥ 95, SEO ≥ 95 — enforced in CI
+    (`frontend/lighthouserc.json`), not just measured.
+  - Test coverage ≥ 85% (lines/branches/functions/statements) via Vitest
+    — enforced in CI, not advisory.
+  - No low-quality commit reaches `develop`: a Husky pre-commit hook
+    (lint-staged: Prettier + ESLint on staged files) plus the existing
+    commit-msg issue-number check (`.husky/`, see CLAUDE.md) gate every
+    commit, not just CI after the fact.
 
 ## 6. Explicit Non-Goals (MVP)
 

@@ -80,6 +80,11 @@ curator a fresh look rather than a bypass.
 
 ## 3. Backend (Spring Boot)
 
+- **Versions**: Spring Boot 4.1.1, Java 21 (Temurin), Gradle. Pinned in
+  `backend/build.gradle` — keep `backend-ci.yml`'s `setup-java` version in
+  sync with the toolchain declaration there if either changes; they drove
+  out of sync once already (CI briefly requested Java 25 while the
+  toolchain declared 21) and that fails the build, not silently ignored.
 - **Shape**: a single Spring Boot app for MVP, package-by-feature —
   `ingestion`, `curation`, `catalog` (public reads), `taxonomy`,
   `submission`. *Not* microservices; see §7 for why.
@@ -120,6 +125,53 @@ to keep the low-budget stack simple:
   internal-tool UI. The single-card review screen (FR-3.1) lives here.
 - Both share a generated API client/types from the Spring Boot OpenAPI
   spec.
+
+### 4.1 Design system (FR-4.5)
+
+Two named themes, not a generic light/dark toggle bolted onto one look:
+
+| Token | Ink (dark, default) | Paper (light, `[data-theme="light"]`) |
+|---|---|---|
+| `bg` / `bg-elevated` | `#12201A` / `#182A22` — deep charcoal-green, not near-black | `#F2F4F0` / `#FAFBF9` — cool sage-white, deliberately not cream |
+| `fg` / `fg-muted` | `#F3F1EA` / `#A8B2AC` | `#1B2620` / `#5A665F` |
+| `accent` (brand) | `#3F6B52` moss green | `#2F4B3C` (darkened for AA contrast) |
+| `gold` (curation marker, sparing use) | `#C9A227` | `#B08900` |
+
+Chosen deliberately against the three looks every AI-styled site defaults
+to right now (cream+serif+terracotta; near-black+neon; hairline-rule
+broadsheet) — moss green and gold tie directly to the product's actual
+content (nature, wellness, "hand-verified quality"), not a generic
+palette. Implemented as CSS custom properties (`app/globals.css`) mapped
+into Tailwind's color scale via `rgb(var(--x) / <alpha-value>)` — the
+same technique shadcn/ui itself uses, which matters since the admin
+portal is built with shadcn/ui.
+
+Typography: **Fraunces** (display, variable, warm editorial serif — the
+"this was actually curated by a person" signal) paired with **Inter**
+(body, full Latin Extended coverage for German ä/ö/ü/ß), both via
+`next/font/google` with `display: 'optional'` (zero layout shift once
+loaded — a Core Web Vitals / NFR-2 requirement, not a nicety).
+
+Theme switching: an inline `<script>` in `app/layout.tsx`'s `<head>` —
+not a `useEffect` — sets `data-theme` before first paint (order: saved
+choice → system preference → dark). A React-effect-only approach (the
+common mistake) still flashes the wrong theme for one frame after
+hydration; a synchronous inline script is what actually prevents it.
+
+### 4.2 Frontend quality gates (NFR-8)
+
+- **Testing**: Vitest + React Testing Library, 85% coverage
+  (lines/branches/functions/statements) enforced via
+  `vitest.config.ts`'s `coverage.thresholds` — a build that drops below
+  it fails, it doesn't just get flagged.
+- **Lighthouse**: `frontend/lighthouserc.json` asserts Performance ≥ 90,
+  Accessibility/Best Practices/SEO ≥ 95 against both the public home page
+  and the admin dashboard, run via `@lhci/cli` in `frontend-ci.yml`.
+- **Pre-commit**: Husky (`.husky/`, replacing the repo's original
+  `.githooks/` at the project owner's request) runs lint-staged
+  (Prettier + ESLint --fix on staged files) alongside the existing
+  backend compile-check and commit-msg issue-number check — see
+  CLAUDE.md's commit conventions.
 
 ## 5. Hosting (low-budget)
 
