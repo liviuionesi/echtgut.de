@@ -12,6 +12,10 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+echtgut:
+  ingestion:
+    enabled: false
+
 management:
   endpoints:
     web:

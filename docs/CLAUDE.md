@@ -181,6 +181,12 @@ back to reality — this section is that force.
   1. **Task Level (Micro-Traceability):** Specific implementation commits land here. Commit subjects reference the Task ID (e.g., `feat: Scaffold Spring Boot (#9)`). Task issue descriptions, comments, and `task.md` list direct commit links to the changed source code.
   2. **Story Level (Increment Traceability):** Summarizes completed child Tasks (with their commit links) + lists the **Increment Promotion / Merge Commit** (e.g., `0127263: Merge develop -> main`) when the Story completes.
   3. **Epic Level (Roadmap Traceability):** Aggregates completed Stories without micro-commit clutter, keeping the high-level roadmap clean and readable.
+- **GitHub Project Board Swimlane Automation (mandatory):**
+  Whenever starting, reviewing, or completing a Task, Story, or Epic, its status column on the GitHub Project Board (`echtgut.de — Product Delivery Board`, Project `13`, Field `PVTSSF_lAHOAHnOzs4BhEsezhgB2zU`) MUST be updated immediately:
+  1. **Starting Work:** Move item to `In progress` (`--single-select-option-id 8eb28618`).
+  2. **In Review / Verification:** Move item to `In review` (`--single-select-option-id ee86df77`).
+  3. **Completion & Closure:** Move item to `Done` (`--single-select-option-id 70a540eb`).
+  - Command: `gh project item-edit --id <item_id> --field-id PVTSSF_lAHOAHnOzs4BhEsezhgB2zU --project-id PVT_kwHOAHnOzs4BhEse --single-select-option-id <option_id>`
 
 ## Code documentation standard (mandatory)
 
