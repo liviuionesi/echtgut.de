@@ -1,8 +1,10 @@
 #!/bin/sh
 # Enforces CLAUDE.md's commit conventions: subject must reference a real
 # issue number, subject must be short, body must stay short (a one-line
-# reason at most, not a rewritten copy of the issue). Installed via
-# `git config core.hooksPath .githooks` (see README/CONTRIBUTING).
+# reason at most, not a rewritten copy of the issue).
+#
+# Migrated from the repo's original .githooks/ to Husky — identical logic,
+# just relocated. Installed via `git config core.hooksPath .husky`.
 set -eu
 
 MSG_FILE="$1"
