@@ -1,17 +1,23 @@
 import React from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function PublicHomePage() {
   return (
-    <main className="container mx-auto px-4 py-16 text-center">
-      <div className="inline-block px-4 py-1 mb-6 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-medium border border-emerald-500/20">
-        Echt & Kuratiert
+    <main className="min-h-screen bg-bg text-fg">
+      <div className="flex justify-end px-4 pt-6">
+        <ThemeToggle />
       </div>
-      <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6">
-        echtgut.de
-      </h1>
-      <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-8">
-        Handverlesene, geprüfte lokale Geheimtipps und Erlebnisse.
-      </p>
+      <div className="container mx-auto px-4 py-16 text-center">
+        <div className="mb-6 inline-block rounded-full border border-gold/20 bg-gold/10 px-4 py-1 text-sm font-medium text-gold">
+          Echt &amp; Kuratiert
+        </div>
+        <h1 className="mb-6 font-display text-5xl font-semibold tracking-tight text-fg md:text-7xl">
+          echtgut.de
+        </h1>
+        <p className="mx-auto mb-8 max-w-2xl text-lg text-fg-muted md:text-xl">
+          Handverlesene, geprüfte lokale Geheimtipps und Erlebnisse.
+        </p>
+      </div>
     </main>
   );
 }

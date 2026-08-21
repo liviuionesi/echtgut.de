@@ -1,0 +1,42 @@
+#!/bin/sh
+# Blocks a commit if staged code doesn't compile, type-check, or pass
+# lint-staged's formatting/lint gate — a hard gate, not just the agent's
+# own judgment. Scoped to what's actually staged, so this stays fast.
+#
+# Migrated from the repo's original .githooks/ to Husky (at the project
+# owner's explicit request) — same checks, same staged-path scoping,
+# just relocated so `core.hooksPath` points at the tool everyone expects
+# in a JS/TS-adjacent repo. Installed via `git config core.hooksPath .husky`
+# (done automatically by `npm --prefix frontend install`'s "prepare"
+# script; see frontend/package.json).
+set -eu
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+FAIL=0
+
+# Backend: compile only if a staged file actually touches it — single
+# Gradle module (backend/), so there's no module name to detect, just
+# presence.
+if printf '%s\n' "$STAGED" | grep -qE '^backend/src/'; then
+  echo "pre-commit: compiling backend (staged changes touched it)"
+  if ! (cd backend && ./gradlew compileJava compileTestJava -q --console=plain); then
+    echo "pre-commit: backend compile failed — fix before committing." >&2
+    FAIL=1
+  fi
+fi
+
+# Frontend: lint-staged runs Prettier + ESLint (write/fix) on exactly the
+# staged files, matching every dependency-free file's formatting/lint
+# rules before it can be committed. Config lives in frontend/package.json.
+if printf '%s\n' "$STAGED" | grep -qE '^frontend/.*\.(ts|tsx|js|jsx|json|css|md)$'; then
+  echo "pre-commit: running lint-staged (staged frontend changes)"
+  if ! (cd frontend && npx lint-staged); then
+    echo "pre-commit: lint-staged failed — fix before committing." >&2
+    FAIL=1
+  fi
+fi
+
+exit $FAIL

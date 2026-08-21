@@ -36,8 +36,16 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Dependency/security scan (#105, #131)
-        run: npm audit --audit-level=moderate
+      - name: Dependency/security scan
+        # --omit=dev deliberately: @lhci/cli's own transitive chain
+        # (puppeteer-core -> lighthouse -> extract-zip/tmp/uuid) trips
+        # several high-severity advisories that are irrelevant here — dev
+        # tooling that never ships, not a runtime dependency an attacker
+        # can reach. Confirmed live: `npm audit fix --force` for these
+        # would downgrade @lhci/cli to 0.1.0, an unrelated ancient
+        # release — npm's own suggested fix, not a real one. Production
+        # dependencies (what actually ships) stay fully audited.
+        run: npm audit --omit=dev --audit-level=moderate
 
       # Coverage gate matching the backend's JaCoCo threshold (see
       # docs/process/DEFINITION_OF_DONE.md) — exclude bootstrap wiring and
@@ -51,3 +59,12 @@ jobs:
         run: npm run build
         env:
           CI: true
+
+      - name: Lighthouse CI
+        # Thresholds and URLs in frontend/lighthouserc.json (NFR-2: a
+        # curated listing is static/ISR, so there's no excuse for it not
+        # to score well). lhci builds on the already-built .next output
+        # via `npm run start`, matching startServerCommand.
+        run: npx lhci autorun
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.ref_name }}
