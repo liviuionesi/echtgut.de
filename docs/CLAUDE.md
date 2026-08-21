@@ -177,13 +177,10 @@ back to reality — this section is that force.
   infeasible, rescope the acceptance criteria to match reality in one line
   — don't leave it unchecked forever, and don't pile on caveats instead of
   rescoping.
-- **Commit-to-Task Traceability (mandatory):** Every completed Task and Story
-  MUST be explicitly linked to its implementing commit(s):
-  1. Post a comment on the GitHub issue containing direct links to the commit(s)
-     (e.g., `[Commit fd8c4fb](https://github.com/liviuionesi/echtgut.de/commit/fd8c4fb)`)
-     and a list of modified/created files.
-  2. Record the commit SHA(s) next to the completed item in `task.md` so the exact
-     implementing code is visible at a glance.
+- **Bi-Directional Commit-to-Task Traceability (mandatory — applies across Claude Code & Antigravity IDE):**
+  1. **Task → Commit Linkage:** Every completed Task and Story MUST be explicitly linked to its implementing commit(s) SHA(s) with clickable links in GitHub issue bodies, issue closing comments, and in `task.md`.
+  2. **Commit → Task Linkage:** Every git commit subject MUST reference the exact GitHub issue/task number (e.g., `feat: Implement X (#12)`), enforced by the `.githooks/commit-msg` hook.
+  3. **Universal Enforcement:** This rule is binding regardless of whether work is performed via Claude Code, Antigravity IDE, or manual developer sessions.
 
 ## Code documentation standard (mandatory)
 
