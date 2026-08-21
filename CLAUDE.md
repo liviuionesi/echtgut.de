@@ -177,6 +177,13 @@ back to reality — this section is that force.
   infeasible, rescope the acceptance criteria to match reality in one line
   — don't leave it unchecked forever, and don't pile on caveats instead of
   rescoping.
+- **Commit-to-Task Traceability (mandatory):** Every completed Task and Story
+  MUST be explicitly linked to its implementing commit(s):
+  1. Post a comment on the GitHub issue containing direct links to the commit(s)
+     (e.g., `[Commit fd8c4fb](https://github.com/liviuionesi/echtgut.de/commit/fd8c4fb)`)
+     and a list of modified/created files.
+  2. Record the commit SHA(s) next to the completed item in `task.md` so the exact
+     implementing code is visible at a glance.
 
 ## Code documentation standard (mandatory)
 
