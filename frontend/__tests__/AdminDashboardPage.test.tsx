@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import AdminDashboardPage from '../app/(admin)/admin/page';
+import AdminDashboardPage from '../app/admin/page';
 
 /**
  * Test suite for the curator admin portal dashboard (`AdminDashboardPage`).

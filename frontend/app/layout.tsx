@@ -48,7 +48,7 @@ const THEME_INIT_SCRIPT = `
     var wantsLight = saved
       ? saved === 'light'
       : window.matchMedia('(prefers-color-scheme: light)').matches;
-    if (wantsLight) document.documentElement.setAttribute('data-theme', 'light');
+    if (wantsLight) document.documentElement.dataset.theme = 'light';
   } catch (e) {}
 })();
 `;
