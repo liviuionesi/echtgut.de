@@ -37,6 +37,10 @@ infrastructure/docker/models/
 # --- Claude Code harness-local session state (not project content) ---
 .claude/scheduled_tasks.lock
 
+# --- Graphify outputs ---
+graphify-out/
+.graphify*
+
 # --- General ---
 .DS_Store
 *.log
