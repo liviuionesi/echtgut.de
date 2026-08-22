@@ -6,7 +6,13 @@ to justify skipping one of these, not repeat all of them every time.
 - **Cost**: stays within the near-$0 free-tier stack (REQUIREMENTS.md
   NFR-1) unless the issue explicitly says otherwise.
 - **Performance/SEO**: public pages stay statically generated or ISR'd;
-  no regression that forces a public route to full SSR (NFR-2).
+  no regression that forces a public route to full SSR (NFR-2). The
+  Atlas Obscura-inspired redesign ([ADR-002](../architecture/adr/002-atlas-obscura-inspired-editorial-redesign.md))
+  makes photography load-bearing for the first time (photo-led cards,
+  full-bleed detail hero) — any new image-heavy component uses
+  `next/image` with explicit dimensions, not a raw `<img>`, so it doesn't
+  quietly regress Lighthouse Performance (NFR-8) the way an unoptimized
+  hero image would.
 - **Data quality**: the `curated_experiences` promotion invariant (image
   + verified location + non-empty description, FR-3.5) is never
   bypassed, including by new ingestion sources (NFR-3).

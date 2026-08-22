@@ -78,12 +78,33 @@ it's on echtgut, it's good."
 - **FR-4.4** The site is served primarily in German (`de`); the
   architecture must not preclude adding `en` later (i18n-ready routing,
   not necessarily i18n-complete at MVP).
-- **FR-4.5** *(added post-MVP-draft, at the project owner's request)* The
-  site supports a dark theme ("Ink," the default) and a light theme
-  ("Paper"), toggleable and persisted per visitor, with no flash of the
-  wrong theme on load. This is a brand decision, not a compliance
-  checkbox — see ARCHITECTURE.md §4 for the token system and why dark is
-  the default.
+- **FR-4.5** *(added post-MVP-draft, at the project owner's request;
+  default flipped by* [ADR-002](architecture/adr/002-atlas-obscura-inspired-editorial-redesign.md)
+  *)* The site supports a light theme ("Paper," **the default**) and a
+  dark theme ("Ink"), toggleable and persisted per visitor, with no flash
+  of the wrong theme on load. This is a brand decision, not a compliance
+  checkbox — see ARCHITECTURE.md §4.1 for the token system and ADR-002
+  for why the default is light, not dark.
+- **FR-4.6** *(added with the Atlas Obscura-inspired redesign, ADR-002)*
+  Experience listings are browsed primarily through photo-led cards (hero
+  image + taxonomy badge overlay + editorial title/hook), not a
+  text-first list — extends FR-4.1's tag/city browsing. The taxonomy from
+  FR-3.3 is also surfaced as a browsable "Explore by mood" tile grid on
+  the site's entry point, not only as a filter control.
+- **FR-4.7** *(added with the Atlas Obscura-inspired redesign, ADR-002)*
+  Each detail page (FR-4.2) visually separates the editorial narrative
+  (title, curator's description, imagery) from a distinct "Practical
+  Info" panel holding the transactional facts (address, price hint, Book
+  Now CTA per FR-4.3) and a public curatorial attribution line. The
+  attribution is team-level ("Curated by the echtgut team") by default,
+  not an individual curator's name — see ADR-002 §4 for the NFR-4/GDPR
+  reasoning; per-curator attribution is an explicit future decision, not
+  a default to slide into.
+- **FR-4.8** *(added with the Atlas Obscura-inspired redesign, ADR-002;
+  deferred/low-priority)* The Practical Info panel may show a lightweight
+  location map (free-tier OpenStreetMap tiles, no API key) once the
+  detail page has real coordinates to render — not required for MVP, and
+  explicitly not blocking on the rest of FR-4.6/4.7.
 
 ### FR-5 Admin / Curator Portal
 - **FR-5.1** Authenticated, role-gated (`CURATOR`/`ADMIN`) — never
