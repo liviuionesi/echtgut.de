@@ -1,5 +1,5 @@
 /**
- * Types and API client helpers for the Curator Admin Portal endpoints.
+ * Types and API client helpers for Curator Admin Portal and Public Marketplace endpoints.
  */
 
 export interface TagResponse {
@@ -14,6 +14,42 @@ export interface CreateTagApiRequest {
   name: string;
   slug?: string;
   category?: string;
+}
+
+export interface PublicExperienceSummary {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  heroImageUrl: string;
+  address: string;
+  lat: number;
+  lng: number;
+  publishedAt: string;
+  tags: string[];
+}
+
+export interface PublicExperienceDetail {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  heroImageUrl: string;
+  address: string;
+  lat: number;
+  lng: number;
+  affiliateUrl?: string | null;
+  bookingContact?: string | null;
+  publishedAt: string;
+  tags: string[];
+}
+
+export interface PaginatedExperiencesResponse {
+  content: PublicExperienceSummary[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
 }
 
 export interface RawDealResponse {
@@ -75,6 +111,67 @@ export interface RejectDealRequest {
 const getBaseUrl = (): string => {
   return process.env.NEXT_PUBLIC_API_URL || '';
 };
+
+/**
+ * Fetches public published experience summaries for marketplace catalog.
+ *
+ * @param tag Optional tag slug filter.
+ * @param query Optional search query filter.
+ * @param page Page index (0-based).
+ * @param size Page size.
+ * @returns PaginatedExperiencesResponse object.
+ */
+export async function fetchPublicExperiences(
+  tag?: string,
+  query?: string,
+  page = 0,
+  size = 20,
+): Promise<PaginatedExperiencesResponse> {
+  const baseUrl = getBaseUrl();
+  const params = new URLSearchParams();
+  if (tag) params.append('tag', tag);
+  if (query) params.append('query', query);
+  params.append('page', page.toString());
+  params.append('size', size.toString());
+
+  const url = `${baseUrl}/api/experiences?${params.toString()}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch public experiences: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Fetches single public published experience detail payload by slug.
+ *
+ * @param slug Unique URL routing slug.
+ * @returns PublicExperienceDetail object.
+ */
+export async function fetchExperienceBySlug(slug: string): Promise<PublicExperienceDetail> {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/experiences/${encodeURIComponent(slug)}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch experience detail (${res.status}): ${res.statusText}`);
+  }
+
+  return res.json();
+}
 
 /**
  * Fetches taxonomy tags from admin API.
