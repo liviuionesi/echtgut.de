@@ -123,7 +123,7 @@ public class JwtTokenProvider {
           case String strRole ->
               Arrays.stream(strRole.split(","))
                   .filter(entry -> !entry.isBlank())
-                  .map(s -> s.trim())
+                  .map(String::trim)
                   .toList();
           case null, default -> Collections.emptyList();
         };

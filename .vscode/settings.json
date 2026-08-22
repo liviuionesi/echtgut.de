@@ -10,14 +10,16 @@
     "**/build": true,
     "**/.gradle": true,
     "**/coverage": true,
-    "**/.DS_Store": true
+    "**/.DS_Store": true,
+    "**/graphify-out": true
   },
   "search.exclude": {
     "**/.next": true,
     "**/node_modules": true,
     "**/build": true,
     "**/.gradle": true,
-    "**/coverage": true
+    "**/coverage": true,
+    "**/graphify-out": true
   },
   "java.compile.nullAnalysis.mode": "automatic"
 }
