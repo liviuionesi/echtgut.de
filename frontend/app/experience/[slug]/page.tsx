@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { fetchExperienceBySlug } from '@/lib/api';
 import { PracticalInfoPanel } from '@/components/catalog/practical-info-panel';
@@ -11,10 +12,55 @@ interface ExperienceDetailPageProps {
 }
 
 /**
+ * Generates SEO metadata (OpenGraph tags, Twitter card, canonical URL) for pristine experience detail pages.
+ *
+ * @param props Page props with slug parameter.
+ * @returns Metadata object.
+ */
+export async function generateMetadata({ params }: ExperienceDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const experience = await fetchExperienceBySlug(slug);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://echtgut.de';
+
+    return {
+      title: `${experience.title} | echtgut.de`,
+      description: experience.description.slice(0, 160),
+      openGraph: {
+        title: experience.title,
+        description: experience.description.slice(0, 160),
+        url: `${siteUrl}/experience/${experience.slug}`,
+        siteName: 'echtgut.de',
+        images: [
+          {
+            url: experience.heroImageUrl,
+            width: 1200,
+            height: 630,
+            alt: experience.title,
+          },
+        ],
+        type: 'article',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: experience.title,
+        description: experience.description.slice(0, 160),
+        images: [experience.heroImageUrl],
+      },
+    };
+  } catch {
+    return {
+      title: 'Experience | echtgut.de',
+      description: 'Pristine curated local experience on echtgut.de',
+    };
+  }
+}
+
+/**
  * Dynamic public experience detail page template (`/experience/[slug]`).
  *
  * Server-rendered with SSG/ISR support, rendering the pristine editorial narrative,
- * hero image overlay, taxonomy tags, and PracticalInfoPanel facts block.
+ * hero image overlay, taxonomy tags, JSON-LD schema, and PracticalInfoPanel facts block.
  */
 export default async function ExperienceDetailPage({ params }: ExperienceDetailPageProps) {
   const { slug } = await params;
@@ -30,8 +76,32 @@ export default async function ExperienceDetailPage({ params }: ExperienceDetailP
     notFound();
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristAttraction',
+    name: experience.title,
+    description: experience.description,
+    image: experience.heroImageUrl,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: experience.address,
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: experience.lat,
+      longitude: experience.lng,
+    },
+    url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://echtgut.de'}/experience/${experience.slug}`,
+  };
+
   return (
     <main className="min-h-screen bg-stone-950 pb-16 text-stone-100">
+      {/* JSON-LD Schema.org Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Header Bar */}
       <header className="sticky top-0 z-40 border-b border-stone-800/80 bg-stone-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">

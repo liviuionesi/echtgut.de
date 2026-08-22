@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import ExperienceDetailPage from '../app/experience/[slug]/page';
+import ExperienceDetailPage, { generateMetadata } from '../app/experience/[slug]/page';
 import * as api from '../lib/api';
 
 vi.mock('../lib/api', () => ({
@@ -37,5 +37,16 @@ describe('ExperienceDetailPage', () => {
     expect(screen.getByText('Fresh organic sourdough bread baked daily.')).toBeInTheDocument();
     expect(screen.getByText('feinschmecker')).toBeInTheDocument();
     expect(screen.getByText('auszeit')).toBeInTheDocument();
+  });
+
+  it('generates OpenGraph metadata correctly', async () => {
+    vi.mocked(api.fetchExperienceBySlug).mockResolvedValue(mockDetail);
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ slug: 'bio-brotgarten-berlin' }),
+    });
+
+    expect(metadata.title).toBe('Bio Brotgarten Berlin | echtgut.de');
+    expect(metadata.openGraph?.title).toBe('Bio Brotgarten Berlin');
   });
 });
