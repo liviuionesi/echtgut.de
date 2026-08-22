@@ -1,3 +1,6 @@
+import React from 'react';
+import { LocationMapWrapper } from '@/components/catalog/location-map-wrapper';
+
 /**
  * Props for {@link PracticalInfoPanel}.
  */
@@ -15,8 +18,13 @@ export interface PracticalInfoPanelProps {
    * ("Kuratiert vom echtgut-Team") rather than an individual curator's name,
    * per ADR-002 §4 — exposing an individual curator publicly would add new
    * personal-data exposure (NFR-4/GDPR) for no product benefit at MVP scale.
+   * personal-data exposure (NFR-4/GDPR) for no product benefit at MVP scale.
    */
   attribution?: string;
+  /** Latitude coordinate (optional, needed for the map). */
+  lat?: number;
+  /** Longitude coordinate (optional, needed for the map). */
+  lng?: number;
 }
 
 /**
@@ -39,12 +47,16 @@ export function PracticalInfoPanel({
   bookingLabel,
   bookingHref = '#',
   attribution = 'Kuratiert vom echtgut-Team',
+  lat,
+  lng,
 }: Readonly<PracticalInfoPanelProps>) {
   return (
     <aside
       aria-label="Praktische Informationen"
       className="space-y-4 rounded-xl border border-gold/30 bg-bg-elevated p-6"
     >
+      {lat !== undefined && lng !== undefined && <LocationMapWrapper lat={lat} lng={lng} />}
+
       <dl className="space-y-3 text-sm">
         <div>
           <dt className="text-xs font-medium uppercase tracking-wide text-fg-muted">Adresse</dt>

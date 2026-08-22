@@ -168,6 +168,8 @@ export default async function ExperienceDetailPage({
             priceHint="Pristine Experience"
             bookingLabel="Book Experience"
             bookingHref={experience.affiliateUrl || '#'}
+            lat={experience.lat}
+            lng={experience.lng}
           />
         </div>
       </section>

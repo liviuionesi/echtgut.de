@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { PracticalInfoPanel } from '@/components/catalog/practical-info-panel';
+
+// Mock the LocationMap component to prevent Leaflet from crashing in JSDOM
+vi.mock('@/components/catalog/location-map-wrapper', () => ({
+  LocationMapWrapper: () => <div data-testid="mock-location-map" />,
+}));
 
 /**
  * Test suite for the `PracticalInfoPanel` component.
@@ -85,5 +90,21 @@ describe('PracticalInfoPanel', () => {
 
     // 3. Then it falls back to "#" instead of an undefined/missing href
     expect(link).toHaveAttribute('href', '#');
+  });
+
+  /**
+   * Verifies the map is rendered if lat/lng are provided.
+   */
+  it('renders the location map when coordinates are provided', async () => {
+    render(<PracticalInfoPanel {...baseProps} lat={52.52} lng={13.405} />);
+    expect(await screen.findByTestId('mock-location-map')).toBeInTheDocument();
+  });
+
+  /**
+   * Verifies the map is omitted if coordinates are missing.
+   */
+  it('omits the location map when coordinates are missing', () => {
+    render(<PracticalInfoPanel {...baseProps} />);
+    expect(screen.queryByTestId('mock-location-map')).not.toBeInTheDocument();
   });
 });
