@@ -1,9 +1,10 @@
 # Product Goal
 
 The single overarching objective the whole Product Backlog serves (Scrum
-2020): a curated, trust-first local deals & experiences marketplace for
-the German market — proving that "we only show you the good stuff" beats
-volume-based aggregation on conversion and repeat visits — built and run
+2020): an automated, trust-first local deals & experiences marketplace for
+the German market — proving that "we only show you the good stuff" (via
+smart aggregation and filtering) beats volume-based aggregation on conversion
+and repeat visits — built and run
 at near-$0 cost until it earns its own infrastructure spend (see
 [ARCHITECTURE.md](../../ARCHITECTURE.md) §5).
 

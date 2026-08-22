@@ -1,274 +1,100 @@
 # Architecture — echtgut.de
 
-Companion to [REQUIREMENTS.md](REQUIREMENTS.md). This is the technical
-design for the curation "airlock" pipeline described there.
+Companion to [REQUIREMENTS.md](REQUIREMENTS.md). This is the technical design for the automated data aggregation pipeline (ADR-003).
 
 ## 1. System Overview
 
-Three actors, one pipeline — raw data never reaches the public site
-without passing through a human curator:
+The system aggregates data from external sources and serves it to the frontend via a unified DTO layer. Manual curation has been deprecated.
 
 ```
- External sources          Curator                    Visitor
- (affiliate feeds,       reviews / edits /          browses / submits
-  OSM POIs, scrapes)      tags / promotes              a "gem"
-        │                      ▲  │                       │
-        ▼                      │  ▼                       ▼
-  ┌─────────────┐        ┌───────────────┐         ┌──────────────┐
-  │  raw_deals  │──────▶ │ Curator Admin │         │ Public Site  │
-  │  (staging)  │ review │ Portal (SPA)  │         │ (SSG / ISR)  │
-  │  PENDING /  │        │ admin.echtgut │         │ echtgut.de   │
-  │  REJECTED / │        └───────┬───────┘         └──────▲───────┘
-  │  PROMOTED   │                │ promote                │ reads
-  └──────▲──────┘                ▼                        │
-         │            ┌───────────────────┐                │
-         └────────────│ curated_experiences│───────────────┘
-        community      │  (public, pristine)│
-        submission ───▶│  validated at write│
-                        └───────────────────┘
+ External APIs                  Backend                  Frontend
+ (Google Places API,          (PlaceAggregatorService)   (Next.js App)
+  Overpass API)                      │                       │
+        │                            ▼                       ▼
+        │                    ┌───────────────┐       ┌──────────────┐
+        └───────────────────▶│ Spring Boot   │──────▶│ Public Site  │
+             JSON payload    │ API Layer     │ DTOs  │ (Map/Grid)   │
+                             │ (Normalized)  │       │ echtgut.de   │
+                             └───────────────┘       └──────────────┘
 ```
 
-Both the admin portal and the public site are Next.js route groups
-talking to the same Spring Boot API — see §4.
+Both the public catalog and map view are Next.js route groups talking to the same Spring Boot API — see §4.
 
-## 2. Data Model (PostgreSQL)
+## 2. Data Model 
 
-### 2.1 `raw_deals` (staging)
+There is no longer a staging (`raw_deals`) or public (`curated_experiences`) persistence layer. Place data is fetched on the fly or cached transiently. 
+The core data structure is the `PlaceDto` sent to the frontend:
 
-| Column | Type | Notes |
+| Field | Type | Notes |
 |---|---|---|
-| `id` | uuid pk | |
-| `source` | text | `OSM` \| `AFFILIATE_<NETWORK>` \| `SCRAPE_<SITE>` \| `COMMUNITY` \| `MANUAL` |
-| `source_ref` | text | source-native id/url — used for dedup + re-sync |
-| `raw_title` | text | unformatted, as ingested |
-| `raw_description` | text | |
-| `raw_image_url` | text, nullable | often missing/bad — curator replaces it |
-| `location_text` | text, nullable | unverified address/text as ingested |
-| `lat` / `lng` | numeric, nullable | unverified |
-| `price_hint` | text, nullable | free-form; feeds are inconsistent |
-| `status` | enum | `PENDING` \| `REJECTED` \| `PROMOTED` |
-| `rejection_reason` | text, nullable | |
-| `submitted_by` | text, nullable | community submitter contact, if applicable |
-| `promoted_experience_id` | uuid, nullable, fk → `curated_experiences.id` | set on promote; enables upsert-on-reapprove |
-| `ingested_at` / `reviewed_at` | timestamptz | |
-
-### 2.2 `curated_experiences` (public, pristine)
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid pk | |
-| `raw_deal_id` | uuid, fk → `raw_deals.id` | traceability back to source |
-| `slug` | text, unique | for SSG routing |
-| `editorial_title` | text, not null | |
-| `editorial_description` | text, not null | |
-| `hero_image_url` | text, not null | validated at promote time (FR-3.5) |
-| `address` | text, not null | |
-| `lat` / `lng` | numeric, not null | validated |
-| `tags` | join table (`experience_tags`) | curator-assigned taxonomy |
-| `affiliate_url` | text, nullable | |
-| `booking_contact` | text, nullable | fallback when there's no affiliate link |
-| `curator_notes` | text, nullable | internal, not rendered publicly |
-| `is_published` | boolean | curator can unpublish without deleting |
-| `created_at` / `updated_at` | timestamptz | |
-
-### 2.3 State machine
-
-`raw_deals.status`: `PENDING → PROMOTED` or `PENDING → REJECTED`, both
-terminal. A rejected item is not silently retried — re-ingestion of the
-same `source_ref` updates the same row (not a new one), giving the
-curator a fresh look rather than a bypass.
+| `id` | string | The Google Place ID or OSM Node ID |
+| `name` | string | Name of the place |
+| `description` | string | Editorial hook or snippet |
+| `heroImageUrl` | string | Fetched via Google Photo reference or fallback |
+| `address` | string | Formatted address |
+| `lat` / `lng` | number | Coordinates for the Map View |
+| `tags` | string[] | Array of tags mapped from API types |
+| `source` | string | e.g. "GOOGLE_PLACES", "OSM" |
 
 ## 3. Backend (Spring Boot)
 
-- **Versions**: Spring Boot 4.1.1, Java 21 (Temurin), Gradle. Pinned in
-  `backend/build.gradle` — keep `backend-ci.yml`'s `setup-java` version in
-  sync with the toolchain declaration there if either changes; they drove
-  out of sync once already (CI briefly requested Java 25 while the
-  toolchain declared 21) and that fails the build, not silently ignored.
-- **Shape**: a single Spring Boot app for MVP, package-by-feature —
-  `ingestion`, `curation`, `catalog` (public reads), `taxonomy`,
-  `submission`. *Not* microservices; see §7 for why.
-- **Persistence**: Spring Data JPA + Flyway migrations. Every migration
-  ships with a repository test (matches
-  [`DEFINITION_OF_DONE.md`](docs/process/DEFINITION_OF_DONE.md)'s
-  "tests alongside code, not after" bar).
-- **Ingestion**: `@Scheduled` jobs per source, behind a common
-  `RawDealSource` adapter interface — adding a new feed means
-  implementing one interface, not touching the scheduler.
-- **Curator API** (JWT-gated, role `CURATOR`/`ADMIN`):
-  - `GET /api/admin/pending-deals` — next unreviewed item.
-  - `POST /api/admin/deals/{id}/promote` — validated transform + upsert
-    into `curated_experiences`.
-  - `POST /api/admin/deals/{id}/reject` — status update + reason.
-  - `GET /api/admin/tags`, `POST /api/admin/tags` — taxonomy management.
+- **Versions**: Spring Boot 4.1.1, Java 21 (Temurin), Gradle. Pinned in `backend/build.gradle`.
+- **Shape**: a single Spring Boot app for MVP, package-by-feature — `catalog`, `exception`.
+- **Aggregation**: The `PlaceAggregatorService` dynamically queries the Google Places API (New) using the `GOOGLE_PLACES_API_KEY` from the environment. If the key is missing or rate limits are exceeded, it seamlessly falls back to the OpenStreetMap (Overpass API).
 - **Public API**:
-  - `GET /api/experiences` — filterable by tag/city, paginated; backs
-    the Next.js SSG/ISR build.
-  - `GET /api/experiences/{slug}` — single listing.
-  - `POST /api/submissions` — community "Local Gem" form → `raw_deals`
-    (rate-limited, captcha-verified).
-  - `POST /api/track/click/{experienceId}` — affiliate click tracking,
-    then redirect.
-- **Auth**: Spring Security + JWT, curator-only login (visitors are
-  anonymous at MVP — see Non-Goals in REQUIREMENTS.md).
+  - `GET /api/places/trending` — Returns a unified list of `PlaceDto` objects based on the configured radius (e.g., Stuttgart 50km).
 
 ## 4. Frontend (Next.js)
 
-Two experiences, one repo, split by route group — not two deployments,
-to keep the low-budget stack simple:
+The frontend is a single Next.js App Router project:
 
-- `app/(public)/…` — SSG/ISR, Tailwind CSS, tuned for SEO/Core Web
-  Vitals. Revalidates on a schedule (ISR) *and* on-demand, triggered by
-  the promote endpoint, so a fresh approval goes live in seconds, not at
-  the next full rebuild.
-- `app/(admin)/…` — client-rendered, auth-gated, shadcn/ui for fast
-  internal-tool UI. The single-card review screen (FR-3.1) lives here.
-- Both share a generated API client/types from the Spring Boot OpenAPI
-  spec.
+- `app/(public)/…` — React Server Components, Tailwind CSS, tuned for SEO/Core Web Vitals. The data is fetched from the backend API.
+- Shares a generated API client/types with the Spring Boot backend.
 
-### 4.1 Design system (FR-4.5)
+### 4.1 Design system (FR-2.5)
 
-Two named themes, not a generic light/dark toggle bolted onto one look.
-**"Paper" (light) is the default** as of
-[ADR-002](architecture/adr/002-atlas-obscura-inspired-editorial-redesign.md) —
-this reverses the original Sprint-0 default (dark "Ink"), on the basis
-that a light, warm-paper background with photography as the first
-impression is core to the Atlas Obscura-inspired direction the project
-owner chose, not an incidental detail. "Ink" is not removed — it's the
-opt-in toggle, same token values, same no-FOUC mechanism.
+Two named themes:
+**"Paper" (light) is the default** as of [ADR-002](architecture/adr/002-atlas-obscura-inspired-editorial-redesign.md). "Ink" is not removed — it's the opt-in toggle.
 
 | Token | Paper (light, default) | Ink (dark, `[data-theme="dark"]`) |
 |---|---|---|
-| `bg` / `bg-elevated` | `#F2F4F0` / `#FAFBF9` — cool sage-white, deliberately not cream | `#12201A` / `#182A22` — deep charcoal-green, not near-black |
+| `bg` / `bg-elevated` | `#F2F4F0` / `#FAFBF9` | `#12201A` / `#182A22` |
 | `fg` / `fg-muted` | `#1B2620` / `#5A665F` | `#F3F1EA` / `#A8B2AC` |
-| `accent` (brand) | `#2F4B3C` moss green (darkened for AA contrast) | `#3F6B52` |
-| `gold` (curation marker, sparing use) | `#B08900` | `#C9A227` |
+| `accent` (brand) | `#2F4B3C` moss green | `#3F6B52` |
+| `gold` (marker) | `#B08900` | `#C9A227` |
 
-Chosen deliberately against the three looks every AI-styled site defaults
-to right now (cream+serif+terracotta; near-black+neon; hairline-rule
-broadsheet) — moss green and gold tie directly to the product's actual
-content (nature, wellness, "hand-verified quality"), not a generic
-palette. ADR-002 deliberately keeps this exact palette rather than
-adopting Atlas Obscura's own hues (e.g. a terracotta tag accent), because
-introducing a third hue for taxonomy badges would recreate the very
-cream+terracotta cliché this system was built to avoid — see ADR-002
-"Options Considered." Implemented as CSS custom properties
-(`app/globals.css`) mapped into Tailwind's color scale via
-`rgb(var(--x) / <alpha-value>)` — the same technique shadcn/ui itself
-uses, which matters since the admin portal is built with shadcn/ui.
-
-Typography: **Fraunces** (display, variable, warm editorial serif — the
-"this was actually curated by a person" signal) paired with **Inter**
-(body, full Latin Extended coverage for German ä/ö/ü/ß), both via
-`next/font/google` with `display: 'optional'` (zero layout shift once
-loaded — a Core Web Vitals / NFR-2 requirement, not a nicety).
-
-Theme switching: an inline `<script>` in `app/layout.tsx`'s `<head>` —
-not a `useEffect` — sets `data-theme` before first paint (order: saved
-choice → system preference → **light**). A React-effect-only approach
-(the common mistake) still flashes the wrong theme for one frame after
-hydration; a synchronous inline script is what actually prevents it.
+Implemented as CSS custom properties (`app/globals.css`).
+Typography: **Fraunces** (display) paired with **Inter** (body), via `next/font/google`.
 
 #### 4.1.1 Editorial layout patterns (Atlas Obscura-inspired, ADR-002)
 
-Three new component patterns, adopting Atlas Obscura's *structural*
-language (photo-led discovery, taxonomy badges, narrative/facts
-separation) onto the token system above — not its literal palette or
-"cabinet of curiosities" tone. Tracked as
-[Epic: Editorial Redesign](../.github/issues/PROJECT_ROADMAP.md).
+- **Photo-led experience card** (`components/catalog/place-card.tsx`) — a 3:2 hero image dominates the card, with a taxonomy badge overlaid. Glassmorphism styling is applied for a premium look.
+- **Location map** (`components/catalog/location-map-wrapper.tsx`) — a Leaflet + OpenStreetMap-tiles map that renders the aggregated coordinates from the backend dynamically.
 
-- **Photo-led experience card** (`components/catalog/ExperienceCard.tsx`)
-  — a 3:2/4:3 hero image dominates the card, with a taxonomy badge
-  (moss-green pill, or gold for a curator's-pick marker) overlaid on the
-  image rather than the previous text-first layout. Title in Fraunces,
-  a one-line editorial hook in Inter below the image, not inside it —
-  this is the primary building block for FR-4.1's tag/city browsing.
-- **"Explore by mood" taxonomy grid** (`components/catalog/
-  ExploreByMood.tsx`) — the tag taxonomy (FR-3.3's curator-assigned
-  tags — "Relaxation," "Fix My Back," "Rainy Day") rendered as a tile
-  grid on the homepage/browse entry point, replacing an implicit
-  dropdown-filter-only pattern with a browsable, editorial front door.
-- **"Practical Info" panel** (`components/catalog/
-  PracticalInfoPanel.tsx`) — the signature element of the redesign: a
-  bordered, visually distinct box on the detail page holding the
-  transactional facts (address, price hint, Book Now CTA) and a
-  curatorial attribution line ("Curated by the echtgut team" —
-  team-level, not an individual curator, per ADR-002 §4 to avoid new
-  personal-data exposure under NFR-4), kept visually separate from the
-  editorial narrative (title, description, imagery) above it. Makes the
-  product's actual pitch — read the curation first, the transaction
-  second — a literal layout decision.
-- **Location map** (deferred, low priority) — a free-tier Leaflet +
-  OpenStreetMap-tiles map inside the Practical Info panel, matching
-  Atlas Obscura's place-detail maps (no API key, $0 cost, consistent
-  with NFR-1). Scoped as its own Task so it doesn't block the rest of
-  the redesign; not wired in until the public catalog API (FR-4.2,
-  Epic: Public Marketplace Site) actually serves real coordinates to
-  render.
+### 4.2 Frontend quality gates (NFR-7)
 
-### 4.2 Frontend quality gates (NFR-8)
-
-- **Testing**: Vitest + React Testing Library, 85% coverage
-  (lines/branches/functions/statements) enforced via
-  `vitest.config.ts`'s `coverage.thresholds` — a build that drops below
-  it fails, it doesn't just get flagged.
-- **Lighthouse**: `frontend/lighthouserc.json` asserts Performance ≥ 90,
-  Accessibility/Best Practices/SEO ≥ 95 against both the public home page
-  and the admin dashboard, run via `@lhci/cli` in `frontend-ci.yml`.
-- **Pre-commit**: Husky (`.husky/`, replacing the repo's original
-  `.githooks/` at the project owner's request) runs lint-staged
-  (Prettier + ESLint --fix on staged files) alongside the existing
-  backend compile-check and commit-msg issue-number check — see
-  CLAUDE.md's commit conventions.
+- **Testing**: Vitest + React Testing Library, 85% coverage.
+- **Lighthouse**: `frontend/lighthouserc.json` asserts Performance ≥ 90, Accessibility/Best Practices/SEO ≥ 95 against the public home page.
+- **Pre-commit**: Husky runs lint-staged (Prettier + ESLint --fix).
 
 ## 5. Hosting (low-budget)
 
-Hybrid, by explicit decision: the frontend stays on a PaaS free tier
-(nothing to gain from self-hosting a static/ISR site); the backend
-reuses [liviuionesi/lmdb.dev](https://github.com/liviuionesi/lmdb.dev)'s
-proven $0-budget deploy mechanism as-is, per
-[docs/architecture/adr/001-zero-budget-azure-deploy.md](docs/architecture/adr/001-zero-budget-azure-deploy.md).
+Hybrid, by explicit decision: the frontend stays on a PaaS free tier; the backend reuses a $0-budget deploy mechanism as-is, per [ADR-001](architecture/adr/001-zero-budget-azure-deploy.md).
 
 | Component | Choice | Why |
 |---|---|---|
-| Next.js (public + admin) | Vercel free tier | matches the pitch; ISR works natively |
-| Spring Boot API + PostgreSQL — local dev | Docker Compose (`infrastructure/docker/docker-compose.yml`) | one command, full parity with the cloud shape below |
-| Spring Boot API + PostgreSQL — cloud demo | Terraform → Azure AKS, ephemeral (`infrastructure/terraform/azure/`) | `terraform apply` → demo → `terraform destroy`/idle auto-stop; nothing bills while it's not actually up |
-| Images | Curator-uploaded, served by the backend (bucket choice deferred — Sprint 1 decision, not blocking) | |
-| CI | GitHub Actions | build + test both apps on every PR; `docker-publish.yml` pushes the backend image to GHCR after Backend CI is green on `main`; `deploy.yml`/`destroy.yml` roll it out to/tear it down from AKS |
-
-This is a deliberate reuse, not a coincidence: same Docker Compose shape
-locally, same Terraform-provisioned AKS cluster in the cloud, same
-ephemeral apply/destroy discipline, same idle auto-stop watchdog. See
-`infrastructure/terraform/azure/variables.tf` for what's sized down from
-lmdb.dev's original (one backend + one Postgres vs. eight services) and
-what's identical (the mechanism itself).
+| Next.js | Vercel free tier | matches the pitch |
+| Spring Boot API — local dev | Docker Compose | one command |
+| Spring Boot API — cloud demo | Terraform → Azure AKS, ephemeral | `terraform apply` → demo → `terraform destroy` |
+| CI | GitHub Actions | build + test both apps on every PR |
 
 ## 6. Security & Compliance
 
-- Admin routes sit behind Spring Security JWT; no admin surface is
-  exposed through the public API path.
-- Cookie consent + privacy policy must ship before any analytics/
-  click-tracking goes live to real traffic (NFR-4) — this is a legal
-  launch blocker for a `.de` consumer site, tracked as its own Epic in
-  [.github/issues/PROJECT_ROADMAP.md](.github/issues/PROJECT_ROADMAP.md).
+- External API Keys (`GOOGLE_PLACES_API_KEY`) are managed via `.env` files and never committed.
+- Cookie consent + privacy policy must ship before any analytics goes live to real traffic (NFR-4) — this is a legal launch blocker for a `.de` consumer site.
 
 ## 7. Deliberate deltas from the lmdb.dev reference architecture
 
-The Scrum *methodology* here is copied identically from lmdb.dev (see
-[docs/process/](docs/process/)) — but the *system* architecture is not.
-Copying microservices/Kafka/Zipkin-grade infrastructure onto a
-pre-revenue curation MVP would be over-engineering for what this project
-actually needs right now:
-
-- **One Spring Boot app, not eight microservices** — there's no
-  independent-scaling or independent-deploy need yet.
-- **No message broker** — ingestion → curation → publish is a
-  straight-through DB read/write, not an event stream.
-- **Observability starts at Actuator health + logs.** Prometheus/
-  Grafana/ELK is a "once there's real traffic" upgrade, not a day-one
-  requirement.
-
-If echtgut later needs to split a piece out (e.g. the ingestion
-scheduler under real load), that's a future ADR — not a default posture
-borrowed from a different project at a different scale.
+- **One Spring Boot app, not eight microservices** — there's no independent-scaling or independent-deploy need yet.
+- **No message broker** — aggregation is synchronous or cached, not an event stream.
+- **Observability starts at Actuator health + logs.** Prometheus/Grafana/ELK is a "once there's real traffic" upgrade.

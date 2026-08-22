@@ -72,9 +72,8 @@ Scrum specifically, and how this would change if it didn't)
   new architectural decision, don't bury it in an issue comment).
 - No completed service exists yet to pattern-match against — this is a
   bootstrap project. Follow `ARCHITECTURE.md` §3-4's package layout
-  (`ingestion`, `curation`, `catalog`, `taxonomy`, `submission`) until a
-  first real module sets the actual convention; once one exists, match
-  it rather than inventing a second style.
+  (`catalog`, `exception`) until a first real module sets the actual convention;
+  once one exists, match it rather than inventing a second style.
 
 ## Picking the next task
 
@@ -107,7 +106,7 @@ Scrum specifically, and how this would change if it didn't)
    here than after a review round.
 4. Code review: a second, independent pass (an `Agent` subagent, or the
    appropriate devkit review skill for the stack). For large diffs, or
-   anything touching auth/curation-validation/shared code, or if step 3
+   anything touching auth/aggregation/shared code, or if step 3
    already flagged something, run a second independent review pass too.
 5. Test review — a distinct question from "do the tests pass": would they
    actually catch it if the implementation were subtly wrong? A second
@@ -170,8 +169,8 @@ back to reality — this section is that force.
   close the Epic. Never leave an exhausted Story or Epic sitting open.
 - Never close an issue with an unchecked acceptance-criteria box. Never
   verify "done" through a shortcut that skips the exact layer the issue is
-  about (e.g. don't confirm a promotion-validation fix by writing straight
-  to `curated_experiences` instead of going through the promote endpoint).
+  about (e.g. don't confirm an aggregation fix by writing straight
+  to the database instead of going through the aggregator service).
 - Ground every rewrite in current code/commit/test state, not a
   reinterpretation of old text. If part of the original plan turned out
   infeasible, rescope the acceptance criteria to match reality in one line
