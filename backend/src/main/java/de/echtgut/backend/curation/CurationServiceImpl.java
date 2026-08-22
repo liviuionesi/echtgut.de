@@ -1,6 +1,8 @@
 package de.echtgut.backend.curation;
 
 import de.echtgut.backend.curation.dto.PromoteDealRequest;
+import de.echtgut.backend.exception.InvalidDealOperationException;
+import de.echtgut.backend.exception.ResourceNotFoundException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Locale;
@@ -32,8 +34,8 @@ public class CurationServiceImpl implements CurationService {
             .findById(rawDealId)
             .orElseThrow(
                 () ->
-                    new IllegalArgumentException(
-                        "Raw deal not found with ID: " + rawDealId));
+                    new ResourceNotFoundException(
+                        "Raw deal candidate not found with ID: " + rawDealId));
 
     deal.setStatus(RawDealStatus.REJECTED);
     deal.setRejectionReason(reason);
@@ -49,8 +51,8 @@ public class CurationServiceImpl implements CurationService {
             .findById(rawDealId)
             .orElseThrow(
                 () ->
-                    new IllegalArgumentException(
-                        "Raw deal not found with ID: " + rawDealId));
+                    new ResourceNotFoundException(
+                        "Raw deal candidate not found with ID: " + rawDealId));
 
     // FR-3.5 validation invariants enforced by @Valid on DTO, double check non-blank
     if (request.editorialTitle().isBlank()
@@ -59,7 +61,7 @@ public class CurationServiceImpl implements CurationService {
         || request.address().isBlank()
         || request.lat() == null
         || request.lng() == null) {
-      throw new IllegalArgumentException(
+      throw new InvalidDealOperationException(
           "Quality invariant violation: title, description, hero image URL, address, and coordinates are required");
     }
 

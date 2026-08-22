@@ -50,7 +50,7 @@ class JwtTokenProviderTest {
     Collection<GrantedAuthority> authorities = jwtTokenProvider.getAuthoritiesFromToken(token);
 
     // 3. Then authorities contain ROLE_CURATOR and ROLE_ADMIN
-    List<String> authorityStrings = authorities.stream().map(GrantedAuthority::getAuthority).toList();
+    List<String> authorityStrings = authorities.stream().map(auth -> auth.getAuthority()).toList();
     assertThat(authorityStrings).containsExactlyInAnyOrder("ROLE_CURATOR", "ROLE_ADMIN");
   }
 

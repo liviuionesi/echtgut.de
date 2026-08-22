@@ -5,11 +5,12 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,14 +58,14 @@ public class JwtTokenProvider {
    * @return Signed JWT string.
    */
   public String generateToken(String username, Collection<String> roles) {
-    Date now = new Date();
-    Date expiry = new Date(now.getTime() + expirationMs);
+    Instant now = Instant.now();
+    Instant expiry = now.plusMillis(expirationMs);
 
     return Jwts.builder()
         .subject(username)
         .claim("roles", roles)
-        .issuedAt(now)
-        .expiration(expiry)
+        .issuedAt(java.util.Date.from(now))
+        .expiration(java.util.Date.from(expiry))
         .signWith(key)
         .compact();
   }
@@ -113,14 +114,20 @@ public class JwtTokenProvider {
       return Collections.emptyList();
     }
 
-    List<String> rawRoles;
-    if (rolesObject instanceof List<?>) {
-      rawRoles = ((List<?>) rolesObject).stream().map(Object::toString).toList();
-    } else if (rolesObject instanceof String strRole) {
-      rawRoles = Arrays.stream(strRole.split(",")).map(String::trim).toList();
-    } else {
-      return Collections.emptyList();
-    }
+    List<String> rawRoles =
+        switch (rolesObject) {
+          case List<?> list ->
+              list.stream()
+                  .filter(Objects::nonNull)
+                  .map((Object entry) -> String.valueOf(entry))
+                  .toList();
+          case String strRole ->
+              Arrays.stream(strRole.split(","))
+                  .map(String::trim)
+                  .filter(entry -> !entry.isEmpty())
+                  .toList();
+          case null, default -> Collections.emptyList();
+        };
 
     return rawRoles.stream()
         .map(
