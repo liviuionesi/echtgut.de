@@ -43,6 +43,9 @@ public class Tag {
   @Builder.Default
   private String category = "MOOD";
 
+  @Column(length = 255)
+  private String description;
+
   @Column(name = "is_retired", nullable = false)
   @Builder.Default
   private boolean isRetired = false;

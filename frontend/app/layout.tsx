@@ -2,6 +2,7 @@ import './globals.css';
 import { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { Fraunces, Inter } from 'next/font/google';
+import { Navigation } from '@/components/navigation';
 
 /**
  * Primary display font configuration (Fraunces variable font).
@@ -75,7 +76,10 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-screen font-sans antialiased">{children}</body>
+      <body className="min-h-screen pt-16 font-sans antialiased">
+        <Navigation />
+        {children}
+      </body>
     </html>
   );
 }

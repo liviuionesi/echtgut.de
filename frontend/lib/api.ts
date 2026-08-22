@@ -2,12 +2,27 @@
  * Types and API client helpers for Curator Admin Portal and Public Marketplace endpoints.
  */
 
-export interface TagResponse {
+export interface TagDto {
   id: string;
   slug: string;
   name: string;
   category: string;
   isRetired: boolean;
+  description?: string;
+}
+
+export interface PlaceDto {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  address: string;
+  lat: number;
+  lon: number;
+  rating: number;
+  reviewCount: number;
+  openNow: boolean;
+  imageUrl: string;
 }
 
 export interface CreateTagApiRequest {
@@ -151,6 +166,33 @@ export async function fetchPublicExperiences(
 }
 
 /**
+ * Submits a new local gem (Story #40) for curator review.
+ * @param payload The submission payload
+ */
+export async function submitLocalGem(payload: {
+  name: string;
+  address: string;
+  description: string;
+}): Promise<void> {
+  const response = await fetch(`${getBaseUrl()}/api/submissions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    // Use Next.js 13+ standard cache options to ensure fresh submissions
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+    throw new Error(`Failed to submit local gem: ${response.statusText}`);
+  }
+}
+
+/**
  * Fetches single public published experience detail payload by slug.
  *
  * @param slug Unique URL routing slug.
@@ -201,7 +243,7 @@ export async function trackExperienceClick(id: string): Promise<{ redirectUrl: s
  * @param includeRetired Whether to include retired tags.
  * @returns Array of TagResponse objects.
  */
-export async function fetchAdminTags(includeRetired = false): Promise<TagResponse[]> {
+export async function fetchAdminTags(includeRetired = false): Promise<TagDto[]> {
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}/api/admin/tags${includeRetired ? '?includeRetired=true' : ''}`;
   const res = await fetch(url, {
@@ -217,6 +259,40 @@ export async function fetchAdminTags(includeRetired = false): Promise<TagRespons
   }
 
   return res.json();
+}
+
+/**
+ * Fetches public taxonomy tags (excluding retired ones).
+ *
+ * @returns Array of tags
+ */
+export async function fetchPublicTags(): Promise<TagDto[]> {
+  const response = await fetch(`${getBaseUrl()}/api/tags`, {
+    // Revalidate occasionally, but since tags don't change every minute,
+    // ISR is a good fit here.
+    next: { revalidate: 3600 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch public tags: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches trending places aggregated from real-world data.
+ */
+export async function fetchTrendingPlaces(): Promise<PlaceDto[]> {
+  const response = await fetch(`${getBaseUrl()}/api/places/trending`, {
+    next: { revalidate: 60 }, // Revalidate every minute for live status updates
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch trending places: ${response.statusText}`);
+  }
+
+  return response.json();
 }
 
 /**

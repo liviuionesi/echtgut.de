@@ -49,7 +49,7 @@ class TaxonomyAdminControllerTest {
   @Test
   @DisplayName("2. Given valid CURATOR JWT, GET /api/admin/tags returns 200 OK")
   void testGetTagsSuccess() throws Exception {
-    TagDto dto = new TagDto(UUID.randomUUID(), "auszeit", "Auszeit", "MOOD", false);
+    TagDto dto = new TagDto(UUID.randomUUID(), "auszeit", "Auszeit", "MOOD", false, "Description");
     when(taxonomyService.getAllTags(false)).thenReturn(List.of(dto));
 
     mockMvc
@@ -62,7 +62,7 @@ class TaxonomyAdminControllerTest {
   @Test
   @DisplayName("3. Given valid payload and CURATOR JWT, POST /api/admin/tags creates tag")
   void testCreateTagSuccess() throws Exception {
-    TagDto created = new TagDto(UUID.randomUUID(), "wellness-spa", "Wellness & Spa", "MOOD", false);
+    TagDto created = new TagDto(UUID.randomUUID(), "wellness-spa", "Wellness & Spa", "MOOD", false, "Desc");
     when(taxonomyService.createTag(any(CreateTagRequest.class))).thenReturn(created);
 
     String payloadJson =
@@ -83,7 +83,7 @@ class TaxonomyAdminControllerTest {
       "4. Given valid tag ID and CURATOR JWT, POST /api/admin/tags/{id}/retire retires tag")
   void testRetireTagSuccess() throws Exception {
     UUID tagId = UUID.randomUUID();
-    TagDto retired = new TagDto(tagId, "old", "Old", "MOOD", true);
+    TagDto retired = new TagDto(tagId, "old", "Old", "MOOD", true, "Old desc");
 
     when(taxonomyService.retireTag(tagId)).thenReturn(retired);
 

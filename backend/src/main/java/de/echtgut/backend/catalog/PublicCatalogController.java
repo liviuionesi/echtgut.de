@@ -2,7 +2,11 @@ package de.echtgut.backend.catalog;
 
 import de.echtgut.backend.catalog.dto.ExperienceDetailDto;
 import de.echtgut.backend.catalog.dto.ExperienceSummaryDto;
+import de.echtgut.backend.catalog.dto.PlaceDto;
+import de.echtgut.backend.taxonomy.TaxonomyService;
+import de.echtgut.backend.taxonomy.dto.TagDto;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicCatalogController {
 
   private final CatalogService catalogService;
+  private final TaxonomyService taxonomyService;
+  private final PlaceAggregatorService placeAggregatorService;
 
   /**
    * Retrieves a paginated, filterable collection of published curated experiences.
@@ -76,5 +82,24 @@ public class PublicCatalogController {
 
     String redirectUrl = catalogService.recordClickAndGetRedirectUrl(id, referrer, userAgent);
     return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl));
+  }
+
+  /**
+   * Retrieves public taxonomy tags (excluding retired ones).
+   *
+   * @return List of {@link TagDto}.
+   */
+  @GetMapping("/api/tags")
+  public ResponseEntity<List<TagDto>> getPublicTags() {
+    return ResponseEntity.ok(taxonomyService.getAllTags(false));
+  }
+
+  /**
+   * Retrieves trending places automatically aggregated from real-world data (Overpass API).
+   * @return List of PlaceDto objects.
+   */
+  @GetMapping("/api/places/trending")
+  public ResponseEntity<List<PlaceDto>> getTrendingPlaces() {
+    return ResponseEntity.ok(placeAggregatorService.getTrendingPlacesInStuttgart());
   }
 }

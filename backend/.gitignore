@@ -31,3 +31,4 @@ build/
 .dependency-check-data/
 dependency-check-report.html
 dependency-check.log
+.env

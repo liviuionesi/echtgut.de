@@ -25,3 +25,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+# External APIs
+google:
+  places:
+    api-key: ${GOOGLE_PLACES_API_KEY:}
