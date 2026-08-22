@@ -2,6 +2,20 @@
  * Types and API client helpers for the Curator Admin Portal endpoints.
  */
 
+export interface TagResponse {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  isRetired: boolean;
+}
+
+export interface CreateTagApiRequest {
+  name: string;
+  slug?: string;
+  category?: string;
+}
+
 export interface RawDealResponse {
   id: string;
   source: string;
@@ -33,6 +47,7 @@ export interface PromoteDealRequest {
   bookingContact?: string;
   curatorNotes?: string;
   isPublished?: boolean;
+  tags?: string[];
 }
 
 export interface CuratedExperienceResponse {
@@ -60,6 +75,54 @@ export interface RejectDealRequest {
 const getBaseUrl = (): string => {
   return process.env.NEXT_PUBLIC_API_URL || '';
 };
+
+/**
+ * Fetches taxonomy tags from admin API.
+ *
+ * @param includeRetired Whether to include retired tags.
+ * @returns Array of TagResponse objects.
+ */
+export async function fetchAdminTags(includeRetired = false): Promise<TagResponse[]> {
+  const baseUrl = getBaseUrl();
+  const url = `${baseUrl}/api/admin/tags${includeRetired ? '?includeRetired=true' : ''}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch tags: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Creates a new taxonomy tag.
+ *
+ * @param payload Create tag request payload.
+ * @returns Created TagResponse object.
+ */
+export async function createAdminTag(payload: CreateTagApiRequest): Promise<TagResponse> {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/admin/tags`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    throw new Error(`Failed to create tag (${res.status}): ${errorText || res.statusText}`);
+  }
+
+  return res.json();
+}
 
 /**
  * Fetches the next pending raw deal candidate for curator review.

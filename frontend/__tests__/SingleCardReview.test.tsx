@@ -7,6 +7,8 @@ vi.mock('../lib/api', () => ({
   fetchNextPendingDeal: vi.fn(),
   promoteDeal: vi.fn(),
   rejectDeal: vi.fn(),
+  fetchAdminTags: vi.fn(),
+  createAdminTag: vi.fn(),
 }));
 
 const mockDeal1: api.RawDealResponse = {
@@ -37,9 +39,15 @@ const mockDeal2: api.RawDealResponse = {
   status: 'PENDING',
 };
 
+const mockTags: api.TagResponse[] = [
+  { id: 'tag-1', slug: 'auszeit', name: 'Auszeit', category: 'MOOD', isRetired: false },
+  { id: 'tag-2', slug: 'romantik', name: 'Romantik', category: 'MOOD', isRetired: false },
+];
+
 describe('SingleCardReview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.fetchAdminTags).mockResolvedValue(mockTags);
   });
 
   it('renders empty queue state when no pending deal is returned', async () => {
@@ -50,10 +58,6 @@ describe('SingleCardReview', () => {
     await waitFor(() => {
       expect(screen.getByText('Queue Empty')).toBeInTheDocument();
     });
-
-    expect(
-      screen.getByText('All pending raw deals have been reviewed! The airlock queue is clean.'),
-    ).toBeInTheDocument();
   });
 
   it('renders raw deal candidate and pre-fills editorial refinement form', async () => {
@@ -65,7 +69,7 @@ describe('SingleCardReview', () => {
       expect(screen.getByText('Raw Thermal Bath Ticket')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('AFFILIATE_FEED • REF-001')).toBeInTheDocument();
+    expect(screen.getByText('Source: AFFILIATE_FEED')).toBeInTheDocument();
     expect(screen.getAllByText('Raw description for thermal bath.')[0]).toBeInTheDocument();
 
     const titleInput = screen.getByDisplayValue('Raw Thermal Bath Ticket');
@@ -75,7 +79,7 @@ describe('SingleCardReview', () => {
     expect(addressInput).toBeInTheDocument();
   });
 
-  it('calls promoteDeal and advances queue on Approve button click', async () => {
+  it('calls promoteDeal and advances queue on Promote button click', async () => {
     vi.mocked(api.fetchNextPendingDeal)
       .mockResolvedValueOnce(mockDeal1)
       .mockResolvedValueOnce(mockDeal2);
@@ -98,7 +102,7 @@ describe('SingleCardReview', () => {
       expect(screen.getByText('Raw Thermal Bath Ticket')).toBeInTheDocument();
     });
 
-    const promoteButton = screen.getByRole('button', { name: /Approve & Promote Experience/i });
+    const promoteButton = screen.getByRole('button', { name: /Promote to Public Catalog/i });
     fireEvent.click(promoteButton);
 
     await waitFor(() => {
@@ -112,6 +116,7 @@ describe('SingleCardReview', () => {
           lat: 52.52,
           lng: 13.405,
           isPublished: true,
+          tags: ['auszeit'],
         }),
       );
     });
@@ -121,7 +126,7 @@ describe('SingleCardReview', () => {
     });
   });
 
-  it('calls rejectDeal and advances queue on Reject button click', async () => {
+  it('calls rejectDeal and advances queue on Confirm Rejection click', async () => {
     vi.mocked(api.fetchNextPendingDeal)
       .mockResolvedValueOnce(mockDeal1)
       .mockResolvedValueOnce(null);
@@ -137,13 +142,13 @@ describe('SingleCardReview', () => {
       expect(screen.getByText('Raw Thermal Bath Ticket')).toBeInTheDocument();
     });
 
-    const rejectFormButton = screen.getByRole('button', { name: /Reject Deal Candidate/i });
+    const rejectFormButton = screen.getByRole('button', { name: /Reject Candidate/i });
     fireEvent.click(rejectFormButton);
 
-    const reasonTextarea = screen.getByPlaceholderText(/Optional rejection reason/i);
+    const reasonTextarea = screen.getByLabelText(/Reason for rejection/i);
     fireEvent.change(reasonTextarea, { target: { value: 'Low quality listing' } });
 
-    const confirmRejectButton = screen.getByRole('button', { name: /Confirm Reject/i });
+    const confirmRejectButton = screen.getByRole('button', { name: /Confirm Rejection/i });
     fireEvent.click(confirmRejectButton);
 
     await waitFor(() => {

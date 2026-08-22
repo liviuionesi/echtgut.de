@@ -6,6 +6,8 @@ vi.mock('../lib/api', () => ({
   fetchNextPendingDeal: vi.fn().mockResolvedValue(null),
   promoteDeal: vi.fn(),
   rejectDeal: vi.fn(),
+  fetchAdminTags: vi.fn().mockResolvedValue([]),
+  createAdminTag: vi.fn(),
 }));
 
 /**

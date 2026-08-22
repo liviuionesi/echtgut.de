@@ -3,6 +3,7 @@ package de.echtgut.backend.curation.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * DTO request payload for promoting a raw candidate deal into a curated public experience.
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
  * @param bookingContact Optional direct booking contact fallback.
  * @param curatorNotes Optional internal notes for curators.
  * @param isPublished Publication flag (defaults to true if null).
+ * @param tags Optional collection of taxonomy tag slugs assigned at promotion.
  */
 public record PromoteDealRequest(
     String slug,
@@ -33,4 +35,5 @@ public record PromoteDealRequest(
     String affiliateUrl,
     String bookingContact,
     String curatorNotes,
-    Boolean isPublished) {}
+    Boolean isPublished,
+    List<String> tags) {}
