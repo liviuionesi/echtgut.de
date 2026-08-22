@@ -119,12 +119,12 @@ public class JwtTokenProvider {
           case List<?> list ->
               list.stream()
                   .filter(Objects::nonNull)
-                  .map((Object entry) -> String.valueOf(entry))
+                  .map(String::valueOf)
                   .toList();
           case String strRole ->
               Arrays.stream(strRole.split(","))
                   .map(String::trim)
-                  .filter(entry -> !entry.isEmpty())
+                  .filter(entry -> entry != null && !entry.isEmpty())
                   .toList();
           case null, default -> Collections.emptyList();
         };

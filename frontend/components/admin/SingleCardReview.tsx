@@ -439,9 +439,7 @@ export function SingleCardReview() {
             {/* Taxonomy Tag Picker Grid (FR-4.1 / FR-5.2) */}
             <div className="space-y-3 rounded-xl border border-stone-800 bg-stone-950/60 p-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-stone-300">
-                  Taxonomy Tags (FR-4.1)
-                </label>
+                <span className="text-xs font-semibold text-stone-300">Taxonomy Tags (FR-4.1)</span>
                 <span className="text-[10px] text-stone-500">Pick tags for catalog filtering</span>
               </div>
 

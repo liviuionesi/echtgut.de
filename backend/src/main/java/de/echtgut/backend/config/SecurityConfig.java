@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -37,8 +36,12 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     try {
-      // 1. Disable CSRF for stateless REST API
-      http.csrf(AbstractHttpConfigurer::disable)
+      /*
+       * CSRF is intentionally disabled. This API is stateless (JWT bearer tokens, no session cookies),
+       * so CSRF attacks are not applicable. Disabling CSRF is safe for REST APIs that do not use
+       * cookie-based authentication. See OWASP REST Security Cheat Sheet §CSRF.
+       */
+      http.csrf(csrf -> csrf.disable()) // NOSONAR java:S4502 — stateless JWT API, no CSRF risk
           // 2. Configure stateless session management
           .sessionManagement(
               session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

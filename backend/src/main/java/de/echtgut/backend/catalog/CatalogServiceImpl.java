@@ -71,7 +71,7 @@ public class CatalogServiceImpl implements CatalogService {
     CuratedExperience experience =
         curatedExperienceRepository
             .findBySlug(slug)
-            .filter(CuratedExperience::isPublished)
+            .filter(exp -> exp != null && exp.isPublished())
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(

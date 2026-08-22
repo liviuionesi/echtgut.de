@@ -62,7 +62,9 @@ export async function generateMetadata({ params }: ExperienceDetailPageProps): P
  * Server-rendered with SSG/ISR support, rendering the pristine editorial narrative,
  * hero image overlay, taxonomy tags, JSON-LD schema, and PracticalInfoPanel facts block.
  */
-export default async function ExperienceDetailPage({ params }: ExperienceDetailPageProps) {
+export default async function ExperienceDetailPage({
+  params,
+}: Readonly<ExperienceDetailPageProps>) {
   const { slug } = await params;
 
   let experience;
