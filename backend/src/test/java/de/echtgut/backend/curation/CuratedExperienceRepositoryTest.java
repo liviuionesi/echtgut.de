@@ -64,8 +64,7 @@ class CuratedExperienceRepositoryTest {
     Optional<CuratedExperience> found =
         curatedExperienceRepository.findBySlug("bio-baecker-kreuzberg");
     assertThat(found).isPresent();
-    assertThat(found.get().getEditorialTitle())
-        .isEqualTo("Handwerklicher Bio-Bäcker in Kreuzberg");
+    assertThat(found.get().getEditorialTitle()).isEqualTo("Handwerklicher Bio-Bäcker in Kreuzberg");
     assertThat(found.get().getRawDealId()).isEqualTo(rawDeal.getId());
   }
 

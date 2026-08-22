@@ -34,5 +34,6 @@ public interface CurationService {
    * @param request Validated curator promotion request details.
    * @return Saved or updated CuratedExperience entity.
    */
-  CuratedExperience promoteDeal(UUID rawDealId, de.echtgut.backend.curation.dto.PromoteDealRequest request);
+  CuratedExperience promoteDeal(
+      UUID rawDealId, de.echtgut.backend.curation.dto.PromoteDealRequest request);
 }

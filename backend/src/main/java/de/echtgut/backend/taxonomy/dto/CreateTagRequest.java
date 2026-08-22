@@ -10,6 +10,4 @@ import jakarta.validation.constraints.NotBlank;
  * @param category Optional tag category.
  */
 public record CreateTagRequest(
-    @NotBlank(message = "Tag name is required") String name,
-    String slug,
-    String category) {}
+    @NotBlank(message = "Tag name is required") String name, String slug, String category) {}

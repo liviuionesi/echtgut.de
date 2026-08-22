@@ -78,8 +78,7 @@ public class TaxonomyServiceImpl implements TaxonomyService {
     Tag tag =
         tagRepository
             .findById(tagId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Tag not found with ID: " + tagId));
+            .orElseThrow(() -> new ResourceNotFoundException("Tag not found with ID: " + tagId));
 
     // 2. Update retired status flag
     tag.setRetired(true);

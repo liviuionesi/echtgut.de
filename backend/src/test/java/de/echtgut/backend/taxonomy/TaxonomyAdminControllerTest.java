@@ -53,9 +53,7 @@ class TaxonomyAdminControllerTest {
     when(taxonomyService.getAllTags(false)).thenReturn(List.of(dto));
 
     mockMvc
-        .perform(
-            get("/api/admin/tags")
-                .header("Authorization", "Bearer " + curatorToken))
+        .perform(get("/api/admin/tags").header("Authorization", "Bearer " + curatorToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].slug").value("auszeit"))
         .andExpect(jsonPath("$[0].name").value("Auszeit"));
@@ -67,7 +65,8 @@ class TaxonomyAdminControllerTest {
     TagDto created = new TagDto(UUID.randomUUID(), "wellness-spa", "Wellness & Spa", "MOOD", false);
     when(taxonomyService.createTag(any(CreateTagRequest.class))).thenReturn(created);
 
-    String payloadJson = "{\"name\":\"Wellness & Spa\",\"slug\":\"wellness-spa\",\"category\":\"MOOD\"}";
+    String payloadJson =
+        "{\"name\":\"Wellness & Spa\",\"slug\":\"wellness-spa\",\"category\":\"MOOD\"}";
 
     mockMvc
         .perform(
@@ -80,7 +79,8 @@ class TaxonomyAdminControllerTest {
   }
 
   @Test
-  @DisplayName("4. Given valid tag ID and CURATOR JWT, POST /api/admin/tags/{id}/retire retires tag")
+  @DisplayName(
+      "4. Given valid tag ID and CURATOR JWT, POST /api/admin/tags/{id}/retire retires tag")
   void testRetireTagSuccess() throws Exception {
     UUID tagId = UUID.randomUUID();
     TagDto retired = new TagDto(tagId, "old", "Old", "MOOD", true);

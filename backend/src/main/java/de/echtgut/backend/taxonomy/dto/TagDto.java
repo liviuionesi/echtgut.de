@@ -12,12 +12,7 @@ import java.util.UUID;
  * @param category Tag category (e.g. MOOD).
  * @param isRetired Whether tag is retired from selection.
  */
-public record TagDto(
-    UUID id,
-    String slug,
-    String name,
-    String category,
-    boolean isRetired) {
+public record TagDto(UUID id, String slug, String name, String category, boolean isRetired) {
 
   /**
    * Static factory creating DTO from entity.

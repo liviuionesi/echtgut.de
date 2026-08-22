@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * DTO record representing a summary view of a published curated experience for marketplace catalog listings.
+ * DTO record representing a summary view of a published curated experience for marketplace catalog
+ * listings.
  *
  * @param id Unique experience UUID.
  * @param slug URL routing slug.

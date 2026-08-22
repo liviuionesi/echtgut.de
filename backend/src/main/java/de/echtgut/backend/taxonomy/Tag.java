@@ -17,7 +17,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * JPA entity representing a taxonomy tag used for categorizing curated experiences by mood or topic.
+ * JPA entity representing a taxonomy tag used for categorizing curated experiences by mood or
+ * topic.
  */
 @Entity
 @Table(name = "tags")

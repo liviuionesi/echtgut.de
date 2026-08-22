@@ -19,7 +19,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 /**
- * Service component responsible for JWT token generation, parsing, validation, and authority extraction.
+ * Service component responsible for JWT token generation, parsing, validation, and authority
+ * extraction.
  *
  * <p>Uses HS256 signature algorithm with a secret key derived from application properties or
  * environment variables.
@@ -37,7 +38,8 @@ public class JwtTokenProvider {
    * @param expirationMs Token validity duration in milliseconds.
    */
   public JwtTokenProvider(
-      @Value("${echtgut.jwt.secret:${JWT_SECRET:devsecret-change-in-production-must-be-at-least-32-bytes}}")
+      @Value(
+              "${echtgut.jwt.secret:${JWT_SECRET:devsecret-change-in-production-must-be-at-least-32-bytes}}")
           String secret,
       @Value("${echtgut.jwt.expiration-ms:86400000}") long expirationMs) {
     byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
@@ -71,7 +73,8 @@ public class JwtTokenProvider {
   }
 
   /**
-   * Validates whether the given JWT token string is structurally sound, properly signed, and unexpired.
+   * Validates whether the given JWT token string is structurally sound, properly signed, and
+   * unexpired.
    *
    * @param token JWT string to validate.
    * @return {@code true} if valid; {@code false} otherwise.
@@ -116,14 +119,10 @@ public class JwtTokenProvider {
 
     List<String> rawRoles =
         switch (rolesObject) {
-          case List<?> list ->
-              list.stream()
-                  .filter(Objects::nonNull)
-                  .map(String::valueOf)
-                  .toList();
+          case List<?> list -> list.stream().filter(Objects::nonNull).map(String::valueOf).toList();
           case String strRole ->
               Arrays.stream(strRole.split(","))
-                  .filter(entry -> entry != null && !entry.isBlank())
+                  .filter(entry -> !entry.isBlank())
                   .map(s -> s.trim())
                   .toList();
           case null, default -> Collections.emptyList();

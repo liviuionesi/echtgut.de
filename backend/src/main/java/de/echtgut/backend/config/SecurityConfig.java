@@ -31,7 +31,8 @@ public class SecurityConfig {
    *
    * @param http {@link HttpSecurity} builder.
    * @return Built security filter chain.
-   * @throws SecurityConfigurationException If authorization filter chain configuration fails to initialize.
+   * @throws SecurityConfigurationException If authorization filter chain configuration fails to
+   *     initialize.
    */
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {

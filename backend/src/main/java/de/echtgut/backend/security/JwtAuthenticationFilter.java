@@ -16,7 +16,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Filter executed once per HTTP request to inspect the {@code Authorization} header for a valid Bearer JWT.
+ * Filter executed once per HTTP request to inspect the {@code Authorization} header for a valid
+ * Bearer JWT.
  *
  * <p>When a valid JWT token is present, populates the {@link SecurityContextHolder} with an
  * authenticated {@link UsernamePasswordAuthenticationToken}.
@@ -29,9 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      FilterChain filterChain)
+      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
     // 1. Extract Bearer token from Authorization header

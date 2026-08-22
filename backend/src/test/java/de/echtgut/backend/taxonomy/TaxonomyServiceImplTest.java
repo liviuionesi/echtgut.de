@@ -38,7 +38,13 @@ class TaxonomyServiceImplTest {
   @Test
   @DisplayName("2. Fetches active tags ordered by name")
   void testGetAllTagsActiveOnly() {
-    Tag tag = Tag.builder().id(UUID.randomUUID()).slug("auszeit").name("Auszeit").isRetired(false).build();
+    Tag tag =
+        Tag.builder()
+            .id(UUID.randomUUID())
+            .slug("auszeit")
+            .name("Auszeit")
+            .isRetired(false)
+            .build();
     when(tagRepository.findByIsRetiredOrderByNameAsc(false)).thenReturn(List.of(tag));
 
     List<TagDto> dtos = service.getAllTags(false);
@@ -50,8 +56,15 @@ class TaxonomyServiceImplTest {
   @Test
   @DisplayName("3. Fetches all tags including retired when requested")
   void testGetAllTagsIncludeRetired() {
-    Tag active = Tag.builder().id(UUID.randomUUID()).slug("auszeit").name("Auszeit").isRetired(false).build();
-    Tag retired = Tag.builder().id(UUID.randomUUID()).slug("old").name("Old").isRetired(true).build();
+    Tag active =
+        Tag.builder()
+            .id(UUID.randomUUID())
+            .slug("auszeit")
+            .name("Auszeit")
+            .isRetired(false)
+            .build();
+    Tag retired =
+        Tag.builder().id(UUID.randomUUID()).slug("old").name("Old").isRetired(true).build();
     when(tagRepository.findAllByOrderByNameAsc()).thenReturn(List.of(active, retired));
 
     List<TagDto> dtos = service.getAllTags(true);

@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Public visitor REST controller serving pristine curated experience catalog listings, detail views,
- * and affiliate click conversion tracking.
+ * Public visitor REST controller serving pristine curated experience catalog listings, detail
+ * views, and affiliate click conversion tracking.
  */
 @RestController
 @RequestMapping
@@ -54,13 +54,15 @@ public class PublicCatalogController {
    * @return {@link ExperienceDetailDto} payload.
    */
   @GetMapping("/api/experiences/{slug}")
-  public ResponseEntity<ExperienceDetailDto> getExperienceBySlug(@PathVariable("slug") String slug) {
+  public ResponseEntity<ExperienceDetailDto> getExperienceBySlug(
+      @PathVariable("slug") String slug) {
     ExperienceDetailDto detail = catalogService.getExperienceBySlug(slug);
     return ResponseEntity.ok(detail);
   }
 
   /**
-   * Records a visitor click event and returns destination redirect URL for conversion tracking (FR-6.1).
+   * Records a visitor click event and returns destination redirect URL for conversion tracking
+   * (FR-6.1).
    *
    * @param id UUID experience identifier.
    * @param request HttpServletRequest for Referer and User-Agent extraction.

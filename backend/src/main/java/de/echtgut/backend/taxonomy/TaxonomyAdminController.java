@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * REST controller providing curator admin management endpoints for experience taxonomy tags.
- */
+/** REST controller providing curator admin management endpoints for experience taxonomy tags. */
 @RestController
 @RequestMapping("/api/admin/tags")
 @RequiredArgsConstructor

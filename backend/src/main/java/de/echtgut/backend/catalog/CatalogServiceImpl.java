@@ -49,9 +49,7 @@ public class CatalogServiceImpl implements CatalogService {
 
     // 3. Map filtered entities to summary DTOs
     List<ExperienceSummaryDto> dtoList =
-        filtered.stream()
-            .map(exp -> ExperienceSummaryDto.fromEntity(exp, List.of()))
-            .toList();
+        filtered.stream().map(exp -> ExperienceSummaryDto.fromEntity(exp, List.of())).toList();
 
     // 4. Handle pagination slicing
     int start = (int) pageable.getOffset();
@@ -83,16 +81,14 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   @Transactional
-  public String recordClickAndGetRedirectUrl(
-      UUID experienceId, String referrer, String userAgent) {
+  public String recordClickAndGetRedirectUrl(UUID experienceId, String referrer, String userAgent) {
     // 1. Retrieve target curated experience entity
     CuratedExperience experience =
         curatedExperienceRepository
             .findById(experienceId)
             .orElseThrow(
                 () ->
-                    new ResourceNotFoundException(
-                        "Experience not found with ID: " + experienceId));
+                    new ResourceNotFoundException("Experience not found with ID: " + experienceId));
 
     // 2. Record click event details
     ClickEvent click =
@@ -103,7 +99,8 @@ public class CatalogServiceImpl implements CatalogService {
             .build();
     clickEventRepository.save(click);
 
-    // 3. Determine fallback redirect URL hierarchy (affiliateUrl -> bookingContact fallback -> detail slug)
+    // 3. Determine fallback redirect URL hierarchy (affiliateUrl -> bookingContact fallback ->
+    // detail slug)
     if (experience.getAffiliateUrl() != null && !experience.getAffiliateUrl().isBlank()) {
       return experience.getAffiliateUrl();
     }

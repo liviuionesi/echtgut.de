@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Integration test suite for {@link IngestionService}.
  *
- * <p>Verifies initial ingestion, deduplication by source_ref, updating existing deals without status
- * override, and graceful exception isolation.
+ * <p>Verifies initial ingestion, deduplication by source_ref, updating existing deals without
+ * status override, and graceful exception isolation.
  */
 @SpringBootTest
 @Transactional
@@ -44,7 +44,8 @@ class IngestionServiceTest {
   }
 
   @Test
-  @DisplayName("2. Given repeated ingestion runs, deduplicates by source_ref without creating duplicates")
+  @DisplayName(
+      "2. Given repeated ingestion runs, deduplicates by source_ref without creating duplicates")
   void testDeduplicationOnRepeatRun() {
     // 1. Given initial ingestion run
     rawDealRepository.deleteAllInBatch();
@@ -59,7 +60,8 @@ class IngestionServiceTest {
   }
 
   @Test
-  @DisplayName("3. Given existing REJECTED deal, re-ingestion updates fields but retains REJECTED status")
+  @DisplayName(
+      "3. Given existing REJECTED deal, re-ingestion updates fields but retains REJECTED status")
   void testReIngestionRetainsStatus() {
     // 1. Given a raw deal previously marked REJECTED by a curator
     rawDealRepository.deleteAllInBatch();

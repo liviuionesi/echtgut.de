@@ -12,7 +12,8 @@ import org.springframework.security.core.GrantedAuthority;
 /**
  * Unit test suite for {@link JwtTokenProvider}.
  *
- * <p>Verifies token creation, validation, claim parsing, authority extraction, and expiration handling.
+ * <p>Verifies token creation, validation, claim parsing, authority extraction, and expiration
+ * handling.
  */
 class JwtTokenProviderTest {
 
@@ -41,7 +42,8 @@ class JwtTokenProviderTest {
   }
 
   @Test
-  @DisplayName("2. Given token with roles, getAuthoritiesFromToken returns prefixed GrantedAuthorities")
+  @DisplayName(
+      "2. Given token with roles, getAuthoritiesFromToken returns prefixed GrantedAuthorities")
   void testGetAuthoritiesFromToken() {
     // 1. Given token with CURATOR and ADMIN roles
     String token = jwtTokenProvider.generateToken("admin@echtgut.de", List.of("CURATOR", "ADMIN"));

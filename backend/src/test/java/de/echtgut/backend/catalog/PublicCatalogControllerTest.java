@@ -131,6 +131,7 @@ class PublicCatalogControllerTest {
     assertThat(clickEventRepository.count()).isEqualTo(1);
     ClickEvent click = clickEventRepository.findAll().get(0);
     assertThat(click.getExperienceId()).isEqualTo(exp.getId());
-    assertThat(click.getReferrerUrl()).isEqualTo("https://echtgut.de/experience/bio-brotgarten-berlin");
+    assertThat(click.getReferrerUrl())
+        .isEqualTo("https://echtgut.de/experience/bio-brotgarten-berlin");
   }
 }

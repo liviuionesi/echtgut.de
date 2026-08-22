@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * Scheduled component triggering periodic ingestion runs.
  *
- * <p>Runs automatically based on configurable interval property {@code
- * echtgut.ingestion.rate-ms}.
+ * <p>Runs automatically based on configurable interval property {@code echtgut.ingestion.rate-ms}.
  */
 @Component
 @RequiredArgsConstructor

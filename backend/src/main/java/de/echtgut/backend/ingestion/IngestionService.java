@@ -72,7 +72,11 @@ public class IngestionService {
             newCount,
             updatedCount);
       } catch (Exception e) {
-        log.error("Failed to execute ingestion for source {}: {}", source.getSourceId(), e.getMessage(), e);
+        log.error(
+            "Failed to execute ingestion for source {}: {}",
+            source.getSourceId(),
+            e.getMessage(),
+            e);
       }
     }
   }

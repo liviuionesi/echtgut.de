@@ -10,15 +10,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Global REST exception handler mapping application exceptions into structured {@link ErrorResponse} payloads.
+ * Global REST exception handler mapping application exceptions into structured {@link
+ * ErrorResponse} payloads.
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  /**
-   * Handles {@link ResourceNotFoundException} returning HTTP 404 NOT_FOUND.
-   */
+  /** Handles {@link ResourceNotFoundException} returning HTTP 404 NOT_FOUND. */
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
       ResourceNotFoundException ex, HttpServletRequest request) {
@@ -32,9 +31,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
 
-  /**
-   * Handles {@link InvalidDealOperationException} returning HTTP 400 BAD_REQUEST.
-   */
+  /** Handles {@link InvalidDealOperationException} returning HTTP 400 BAD_REQUEST. */
   @ExceptionHandler(InvalidDealOperationException.class)
   public ResponseEntity<ErrorResponse> handleInvalidDealOperationException(
       InvalidDealOperationException ex, HttpServletRequest request) {
@@ -48,9 +45,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
   }
 
-  /**
-   * Handles {@link UnauthorizedException} returning HTTP 401 UNAUTHORIZED.
-   */
+  /** Handles {@link UnauthorizedException} returning HTTP 401 UNAUTHORIZED. */
   @ExceptionHandler(UnauthorizedException.class)
   public ResponseEntity<ErrorResponse> handleUnauthorizedException(
       UnauthorizedException ex, HttpServletRequest request) {
@@ -65,7 +60,8 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Handles {@link MethodArgumentNotValidException} validation errors returning HTTP 400 BAD_REQUEST.
+   * Handles {@link MethodArgumentNotValidException} validation errors returning HTTP 400
+   * BAD_REQUEST.
    */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
@@ -86,9 +82,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
   }
 
-  /**
-   * Handles generic {@link IllegalArgumentException} returning HTTP 400 BAD_REQUEST.
-   */
+  /** Handles generic {@link IllegalArgumentException} returning HTTP 400 BAD_REQUEST. */
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
       IllegalArgumentException ex, HttpServletRequest request) {
@@ -103,7 +97,8 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Fallback handler for unhandled {@link Exception} instances returning HTTP 500 INTERNAL_SERVER_ERROR.
+   * Fallback handler for unhandled {@link Exception} instances returning HTTP 500
+   * INTERNAL_SERVER_ERROR.
    */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGenericException(

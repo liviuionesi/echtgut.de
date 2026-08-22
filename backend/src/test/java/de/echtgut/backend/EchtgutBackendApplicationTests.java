@@ -35,9 +35,7 @@ class EchtgutBackendApplicationTests {
     assertThat(applicationContext).isNotNull();
   }
 
-  /**
-   * Verifies that main method executes without throwing exceptions.
-   */
+  /** Verifies that main method executes without throwing exceptions. */
   @Test
   @DisplayName("Main method runs successfully")
   void mainMethodRuns() {

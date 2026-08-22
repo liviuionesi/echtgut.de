@@ -25,7 +25,8 @@ public record ErrorResponse(
     this(status, error, message, path, Instant.now(), List.of());
   }
 
-  public ErrorResponse(int status, String error, String message, String path, List<String> details) {
+  public ErrorResponse(
+      int status, String error, String message, String path, List<String> details) {
     this(status, error, message, path, Instant.now(), details);
   }
 }

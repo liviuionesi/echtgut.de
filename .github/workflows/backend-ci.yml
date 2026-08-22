@@ -5,11 +5,15 @@ on:
     branches: [main, develop]
     paths:
       - 'backend/**'
+      - 'backend/build.gradle'
+      - 'backend/settings.gradle'
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [main, develop]
     paths:
       - 'backend/**'
+      - 'backend/build.gradle'
+      - 'backend/settings.gradle'
 
 jobs:
   build:
@@ -28,6 +32,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Disabled shallow clone — needed for Sonar blame/branch analysis
       
       - name: Setup Java 21
         uses: actions/setup-java@v4

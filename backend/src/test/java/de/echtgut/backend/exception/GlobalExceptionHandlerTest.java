@@ -42,7 +42,8 @@ class GlobalExceptionHandlerTest {
   @Test
   void testHandleInvalidDealOperationException() {
     InvalidDealOperationException ex = new InvalidDealOperationException("Invalid operation");
-    ResponseEntity<ErrorResponse> response = handler.handleInvalidDealOperationException(ex, request);
+    ResponseEntity<ErrorResponse> response =
+        handler.handleInvalidDealOperationException(ex, request);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     assertThat(response.getBody()).isNotNull();
@@ -67,9 +68,11 @@ class GlobalExceptionHandlerTest {
     when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
 
     MethodParameter parameter = mock(MethodParameter.class);
-    MethodArgumentNotValidException ex = new MethodArgumentNotValidException(parameter, bindingResult);
+    MethodArgumentNotValidException ex =
+        new MethodArgumentNotValidException(parameter, bindingResult);
 
-    ResponseEntity<ErrorResponse> response = handler.handleMethodArgumentNotValidException(ex, request);
+    ResponseEntity<ErrorResponse> response =
+        handler.handleMethodArgumentNotValidException(ex, request);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     assertThat(response.getBody()).isNotNull();

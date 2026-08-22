@@ -21,7 +21,8 @@ public interface CatalogService {
   String getCatalogStatus();
 
   /**
-   * Retrieves a paginated list of published curated experiences, optionally filtered by tag or query.
+   * Retrieves a paginated list of published curated experiences, optionally filtered by tag or
+   * query.
    *
    * @param tag Optional tag slug filter.
    * @param query Optional search text query filter.

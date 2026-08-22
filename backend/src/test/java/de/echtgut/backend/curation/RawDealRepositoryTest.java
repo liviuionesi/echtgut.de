@@ -76,7 +76,8 @@ class RawDealRepositoryTest {
 
   /** Tests filtering and counting deals by review status. */
   @Test
-  @DisplayName("3. Given deals with different statuses, when filtered, then matches status criteria")
+  @DisplayName(
+      "3. Given deals with different statuses, when filtered, then matches status criteria")
   void testFindByStatusAndCount() {
     // 1. Given deals with different statuses
     rawDealRepository.saveAndFlush(
