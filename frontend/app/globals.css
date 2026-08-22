@@ -3,31 +3,21 @@
 @tailwind utilities;
 
 /*
- * Design tokens — "Ink" (dark, default) / "Paper" (light, [data-theme="light"]).
+ * Design tokens — "Paper" (light, default) / "Ink" (dark, [data-theme="dark"]).
  * RGB channel triples (not hex) so Tailwind's `rgb(var(--x) / <alpha-value>)`
  * pattern in tailwind.config.js gets opacity support for free (bg-accent/10,
  * text-fg-muted/60, etc.) — the same technique shadcn/ui itself relies on,
  * which matters here since the admin portal is built with shadcn/ui
  * (ARCHITECTURE.md §4).
  *
- * Dark is the default (no data-theme attribute) — this is a dark-first
- * brand, not a light site with a dark option bolted on. See
- * REQUIREMENTS.md FR-4.5 and app/layout.tsx's inline theme script for why
- * that script — not a React effect — is what actually prevents a flash of
- * the wrong theme on load.
+ * Light is the default (no data-theme attribute), per ADR-002 (Atlas
+ * Obscura-inspired editorial redesign) — this reverses the original
+ * dark-first default from Story #41. Dark "Ink" is still fully supported,
+ * just opt-in now. See REQUIREMENTS.md FR-4.5 and app/layout.tsx's inline
+ * theme script for why that script — not a React effect — is what
+ * actually prevents a flash of the wrong theme on load.
  */
 :root {
-  --color-bg: 18 32 26; /* #12201A — deep charcoal-green ink, not near-black */
-  --color-bg-elevated: 24 42 34; /* #182A22 — card/panel surfaces */
-  --color-fg: 243 241 234; /* #F3F1EA — warm soft white */
-  --color-fg-muted: 168 178 172; /* #A8B2AC — secondary text */
-  --color-accent: 63 107 82; /* #3F6B52 — moss green, the brand color */
-  --color-accent-strong: 44 77 58; /* #2C4D3A — hover/active state */
-  --color-gold: 201 162 39; /* #C9A227 — curation/quality marker, used sparingly */
-  --color-border: 42 59 51; /* #2A3B33 */
-}
-
-[data-theme='light'] {
   --color-bg: 242 244 240; /* #F2F4F0 — cool sage-white, deliberately not cream */
   --color-bg-elevated: 250 251 249; /* #FAFBF9 */
   --color-fg: 27 38 32; /* #1B2620 */
@@ -36,6 +26,17 @@
   --color-accent-strong: 31 53 39; /* #1F3527 */
   --color-gold: 176 137 0; /* #B08900 — deepened for the same contrast reason */
   --color-border: 221 227 220; /* #DDE3DC */
+}
+
+[data-theme='dark'] {
+  --color-bg: 18 32 26; /* #12201A — deep charcoal-green ink, not near-black */
+  --color-bg-elevated: 24 42 34; /* #182A22 — card/panel surfaces */
+  --color-fg: 243 241 234; /* #F3F1EA — warm soft white */
+  --color-fg-muted: 168 178 172; /* #A8B2AC — secondary text */
+  --color-accent: 63 107 82; /* #3F6B52 — moss green, the brand color */
+  --color-accent-strong: 44 77 58; /* #2C4D3A — hover/active state */
+  --color-gold: 201 162 39; /* #C9A227 — curation/quality marker, used sparingly */
+  --color-border: 42 59 51; /* #2A3B33 */
 }
 
 @media (prefers-reduced-motion: reduce) {

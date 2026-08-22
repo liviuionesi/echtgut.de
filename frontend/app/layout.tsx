@@ -39,16 +39,17 @@ export const metadata: Metadata = {
  * Synchronous inline theme initialization script.
  *
  * Runs before first paint to prevent Flash of Unstyled Content (FOUC) when switching
- * between light and dark themes. Precedence: saved preference > system color scheme > dark default.
+ * between light and dark themes. Precedence: saved preference > system color scheme > light
+ * default (flipped from dark by ADR-002 — see docs/architecture/adr/002-atlas-obscura-inspired-editorial-redesign.md).
  */
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
     var saved = localStorage.getItem('theme');
-    var wantsLight = saved
-      ? saved === 'light'
-      : window.matchMedia('(prefers-color-scheme: light)').matches;
-    if (wantsLight) document.documentElement.dataset.theme = 'light';
+    var wantsDark = saved
+      ? saved === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (wantsDark) document.documentElement.dataset.theme = 'dark';
   } catch (e) {}
 })();
 `;
