@@ -6,6 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import de.echtgut.backend.security.JwtTokenProvider;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Integration test suite for {@link CuratorAdminController}.
  *
- * <p>Verifies {@code GET /api/admin/pending-deals}, {@code POST /api/admin/deals/{id}/reject}, and
- * {@code POST /api/admin/deals/{id}/promote} with validation &amp; upserting.
+ * <p>Verifies security enforcement (HTTP 401 Unauthorized for unauthenticated access) as well as
+ * {@code GET /api/admin/pending-deals}, {@code POST /api/admin/deals/{id}/reject}, and {@code POST
+ * /api/admin/deals/{id}/promote} with valid JWT authentication.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,18 +35,50 @@ class CuratorAdminControllerTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private RawDealRepository rawDealRepository;
   @Autowired private CuratedExperienceRepository curatedExperienceRepository;
+  @Autowired private JwtTokenProvider jwtTokenProvider;
+
+  private String curatorToken;
+
+  @BeforeEach
+  void setUp() {
+    curatorToken = jwtTokenProvider.generateToken("curator@echtgut.de", List.of("CURATOR"));
+  }
 
   @Test
-  @DisplayName("1. Given no pending deals, GET /api/admin/pending-deals returns HTTP 204 No Content")
+  @DisplayName("1. Given unauthenticated request to /api/admin/pending-deals, returns HTTP 401 Unauthorized")
+  void testGetPendingDealsUnauthenticatedReturns401() throws Exception {
+    mockMvc.perform(get("/api/admin/pending-deals")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("2. Given unauthenticated request to /api/admin/deals/{id}/reject, returns HTTP 401 Unauthorized")
+  void testRejectDealUnauthenticatedReturns401() throws Exception {
+    mockMvc
+        .perform(post("/api/admin/deals/00000000-0000-0000-0000-000000000001/reject"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("3. Given unauthenticated request to /api/admin/deals/{id}/promote, returns HTTP 401 Unauthorized")
+  void testPromoteDealUnauthenticatedReturns401() throws Exception {
+    mockMvc
+        .perform(post("/api/admin/deals/00000000-0000-0000-0000-000000000001/promote"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("4. Given no pending deals and valid CURATOR JWT, GET /api/admin/pending-deals returns HTTP 204 No Content")
   void testGetPendingDealsEmptyReturns204() throws Exception {
     rawDealRepository.deleteAllInBatch();
 
-    mockMvc.perform(get("/api/admin/pending-deals")).andExpect(status().isNoContent());
+    mockMvc
+        .perform(get("/api/admin/pending-deals").header("Authorization", "Bearer " + curatorToken))
+        .andExpect(status().isNoContent());
   }
 
   @Test
   @DisplayName(
-      "2. Given pending deal, GET /api/admin/pending-deals returns HTTP 200 OK with deal details")
+      "5. Given pending deal and valid CURATOR JWT, GET /api/admin/pending-deals returns HTTP 200 OK with deal details")
   void testGetPendingDealsReturns200() throws Exception {
     rawDealRepository.deleteAllInBatch();
 
@@ -55,7 +91,7 @@ class CuratorAdminControllerTest {
                 .build());
 
     mockMvc
-        .perform(get("/api/admin/pending-deals"))
+        .perform(get("/api/admin/pending-deals").header("Authorization", "Bearer " + curatorToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(deal.getId().toString()))
         .andExpect(jsonPath("$.rawTitle").value("Kaffeekultur Berlin"))
@@ -64,7 +100,7 @@ class CuratorAdminControllerTest {
 
   @Test
   @DisplayName(
-      "3. Given pending deal, POST /api/admin/deals/{id}/reject updates status to REJECTED")
+      "6. Given pending deal and valid CURATOR JWT, POST /api/admin/deals/{id}/reject updates status to REJECTED")
   void testRejectDealReturns200() throws Exception {
     rawDealRepository.deleteAllInBatch();
 
@@ -81,6 +117,7 @@ class CuratorAdminControllerTest {
     mockMvc
         .perform(
             post("/api/admin/deals/" + deal.getId() + "/reject")
+                .header("Authorization", "Bearer " + curatorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payloadJson))
         .andExpect(status().isOk())
@@ -95,7 +132,7 @@ class CuratorAdminControllerTest {
   }
 
   @Test
-  @DisplayName("4. Given valid payload, POST /api/admin/deals/{id}/promote creates experience & marks PROMOTED")
+  @DisplayName("7. Given valid payload and CURATOR JWT, POST /api/admin/deals/{id}/promote creates experience & marks PROMOTED")
   void testPromoteDealValidReturns200() throws Exception {
     rawDealRepository.deleteAllInBatch();
     curatedExperienceRepository.deleteAllInBatch();
@@ -125,6 +162,7 @@ class CuratorAdminControllerTest {
     mockMvc
         .perform(
             post("/api/admin/deals/" + deal.getId() + "/promote")
+                .header("Authorization", "Bearer " + curatorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(promoteJson))
         .andExpect(status().isOk())
@@ -139,7 +177,7 @@ class CuratorAdminControllerTest {
   }
 
   @Test
-  @DisplayName("5. Given invalid payload (missing hero image), POST /api/admin/deals/{id}/promote returns 400")
+  @DisplayName("8. Given invalid payload (missing hero image), POST /api/admin/deals/{id}/promote returns 400")
   void testPromoteDealMissingHeroImageReturns400() throws Exception {
     rawDealRepository.deleteAllInBatch();
 
@@ -166,13 +204,14 @@ class CuratorAdminControllerTest {
     mockMvc
         .perform(
             post("/api/admin/deals/" + deal.getId() + "/promote")
+                .header("Authorization", "Bearer " + curatorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson))
         .andExpect(status().isBadRequest());
   }
 
   @Test
-  @DisplayName("6. Given re-promoted raw deal, updates existing curated_experiences row without duplicate")
+  @DisplayName("9. Given re-promoted raw deal, updates existing curated_experiences row without duplicate")
   void testRePromoteDealUpsertsExperience() throws Exception {
     rawDealRepository.deleteAllInBatch();
     curatedExperienceRepository.deleteAllInBatch();
@@ -201,6 +240,7 @@ class CuratorAdminControllerTest {
     mockMvc
         .perform(
             post("/api/admin/deals/" + deal.getId() + "/promote")
+                .header("Authorization", "Bearer " + curatorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(promoteJson1))
         .andExpect(status().isOk());
@@ -223,6 +263,7 @@ class CuratorAdminControllerTest {
     mockMvc
         .perform(
             post("/api/admin/deals/" + deal.getId() + "/promote")
+                .header("Authorization", "Bearer " + curatorToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(promoteJson2))
         .andExpect(status().isOk())

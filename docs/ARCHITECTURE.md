@@ -128,23 +128,34 @@ to keep the low-budget stack simple:
 
 ### 4.1 Design system (FR-4.5)
 
-Two named themes, not a generic light/dark toggle bolted onto one look:
+Two named themes, not a generic light/dark toggle bolted onto one look.
+**"Paper" (light) is the default** as of
+[ADR-002](architecture/adr/002-atlas-obscura-inspired-editorial-redesign.md) —
+this reverses the original Sprint-0 default (dark "Ink"), on the basis
+that a light, warm-paper background with photography as the first
+impression is core to the Atlas Obscura-inspired direction the project
+owner chose, not an incidental detail. "Ink" is not removed — it's the
+opt-in toggle, same token values, same no-FOUC mechanism.
 
-| Token | Ink (dark, default) | Paper (light, `[data-theme="light"]`) |
+| Token | Paper (light, default) | Ink (dark, `[data-theme="dark"]`) |
 |---|---|---|
-| `bg` / `bg-elevated` | `#12201A` / `#182A22` — deep charcoal-green, not near-black | `#F2F4F0` / `#FAFBF9` — cool sage-white, deliberately not cream |
-| `fg` / `fg-muted` | `#F3F1EA` / `#A8B2AC` | `#1B2620` / `#5A665F` |
-| `accent` (brand) | `#3F6B52` moss green | `#2F4B3C` (darkened for AA contrast) |
-| `gold` (curation marker, sparing use) | `#C9A227` | `#B08900` |
+| `bg` / `bg-elevated` | `#F2F4F0` / `#FAFBF9` — cool sage-white, deliberately not cream | `#12201A` / `#182A22` — deep charcoal-green, not near-black |
+| `fg` / `fg-muted` | `#1B2620` / `#5A665F` | `#F3F1EA` / `#A8B2AC` |
+| `accent` (brand) | `#2F4B3C` moss green (darkened for AA contrast) | `#3F6B52` |
+| `gold` (curation marker, sparing use) | `#B08900` | `#C9A227` |
 
 Chosen deliberately against the three looks every AI-styled site defaults
 to right now (cream+serif+terracotta; near-black+neon; hairline-rule
 broadsheet) — moss green and gold tie directly to the product's actual
 content (nature, wellness, "hand-verified quality"), not a generic
-palette. Implemented as CSS custom properties (`app/globals.css`) mapped
-into Tailwind's color scale via `rgb(var(--x) / <alpha-value>)` — the
-same technique shadcn/ui itself uses, which matters since the admin
-portal is built with shadcn/ui.
+palette. ADR-002 deliberately keeps this exact palette rather than
+adopting Atlas Obscura's own hues (e.g. a terracotta tag accent), because
+introducing a third hue for taxonomy badges would recreate the very
+cream+terracotta cliché this system was built to avoid — see ADR-002
+"Options Considered." Implemented as CSS custom properties
+(`app/globals.css`) mapped into Tailwind's color scale via
+`rgb(var(--x) / <alpha-value>)` — the same technique shadcn/ui itself
+uses, which matters since the admin portal is built with shadcn/ui.
 
 Typography: **Fraunces** (display, variable, warm editorial serif — the
 "this was actually curated by a person" signal) paired with **Inter**
@@ -154,9 +165,46 @@ loaded — a Core Web Vitals / NFR-2 requirement, not a nicety).
 
 Theme switching: an inline `<script>` in `app/layout.tsx`'s `<head>` —
 not a `useEffect` — sets `data-theme` before first paint (order: saved
-choice → system preference → dark). A React-effect-only approach (the
-common mistake) still flashes the wrong theme for one frame after
+choice → system preference → **light**). A React-effect-only approach
+(the common mistake) still flashes the wrong theme for one frame after
 hydration; a synchronous inline script is what actually prevents it.
+
+#### 4.1.1 Editorial layout patterns (Atlas Obscura-inspired, ADR-002)
+
+Three new component patterns, adopting Atlas Obscura's *structural*
+language (photo-led discovery, taxonomy badges, narrative/facts
+separation) onto the token system above — not its literal palette or
+"cabinet of curiosities" tone. Tracked as
+[Epic: Editorial Redesign](../.github/issues/PROJECT_ROADMAP.md).
+
+- **Photo-led experience card** (`components/catalog/ExperienceCard.tsx`)
+  — a 3:2/4:3 hero image dominates the card, with a taxonomy badge
+  (moss-green pill, or gold for a curator's-pick marker) overlaid on the
+  image rather than the previous text-first layout. Title in Fraunces,
+  a one-line editorial hook in Inter below the image, not inside it —
+  this is the primary building block for FR-4.1's tag/city browsing.
+- **"Explore by mood" taxonomy grid** (`components/catalog/
+  ExploreByMood.tsx`) — the tag taxonomy (FR-3.3's curator-assigned
+  tags — "Relaxation," "Fix My Back," "Rainy Day") rendered as a tile
+  grid on the homepage/browse entry point, replacing an implicit
+  dropdown-filter-only pattern with a browsable, editorial front door.
+- **"Practical Info" panel** (`components/catalog/
+  PracticalInfoPanel.tsx`) — the signature element of the redesign: a
+  bordered, visually distinct box on the detail page holding the
+  transactional facts (address, price hint, Book Now CTA) and a
+  curatorial attribution line ("Curated by the echtgut team" —
+  team-level, not an individual curator, per ADR-002 §4 to avoid new
+  personal-data exposure under NFR-4), kept visually separate from the
+  editorial narrative (title, description, imagery) above it. Makes the
+  product's actual pitch — read the curation first, the transaction
+  second — a literal layout decision.
+- **Location map** (deferred, low priority) — a free-tier Leaflet +
+  OpenStreetMap-tiles map inside the Practical Info panel, matching
+  Atlas Obscura's place-detail maps (no API key, $0 cost, consistent
+  with NFR-1). Scoped as its own Task so it doesn't block the rest of
+  the redesign; not wired in until the public catalog API (FR-4.2,
+  Epic: Public Marketplace Site) actually serves real coordinates to
+  render.
 
 ### 4.2 Frontend quality gates (NFR-8)
 
