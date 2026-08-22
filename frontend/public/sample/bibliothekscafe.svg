@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Illustration eines Bibliothekscafés bei Regen">
+  <title>Bibliothekscafé — Beispielbild</title>
+  <rect width="800" height="600" fill="#12201A"/>
+  <rect x="0" y="0" width="800" height="600" fill="#182A22"/>
+  <rect x="500" y="60" width="240" height="320" rx="6" fill="#0E1813"/>
+  <rect x="530" y="90" width="180" height="260" fill="#243B31"/>
+  <g stroke="#A8B2AC" stroke-width="3" opacity="0.7">
+    <line x1="530" y1="120" x2="510" y2="170"/>
+    <line x1="580" y1="110" x2="560" y2="165"/>
+    <line x1="630" y1="130" x2="610" y2="180"/>
+    <line x1="680" y1="115" x2="660" y2="170"/>
+  </g>
+  <rect x="60" y="330" width="360" height="150" fill="#0E1813"/>
+  <g>
+    <rect x="80" y="350" width="26" height="110" fill="#C9A227"/>
+    <rect x="112" y="360" width="26" height="100" fill="#3F6B52"/>
+    <rect x="144" y="345" width="26" height="115" fill="#A8B2AC"/>
+    <rect x="176" y="355" width="26" height="105" fill="#C9A227"/>
+    <rect x="208" y="365" width="26" height="95" fill="#3F6B52"/>
+    <rect x="240" y="350" width="26" height="110" fill="#A8B2AC"/>
+  </g>
+  <ellipse cx="330" cy="470" rx="70" ry="14" fill="#000000" opacity="0.35"/>
+  <circle cx="330" cy="430" r="30" fill="#F3F1EA" opacity="0.9"/>
+  <rect x="316" y="455" width="28" height="10" fill="#F3F1EA" opacity="0.7"/>
+</svg>

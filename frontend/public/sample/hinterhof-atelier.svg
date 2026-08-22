@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Illustration eines Hinterhof-Ateliers mit Bilderrahmen">
+  <title>Hinterhof-Atelier — Beispielbild</title>
+  <rect width="800" height="600" fill="#F2F4F0"/>
+  <rect x="0" y="0" width="800" height="600" fill="#FAFBF9"/>
+  <rect x="60" y="70" width="230" height="300" fill="none" stroke="#B08900" stroke-width="10"/>
+  <rect x="90" y="100" width="170" height="240" fill="#DDE3DC"/>
+  <polyline points="90,300 150,200 190,260 260,140" fill="none" stroke="#2F4B3C" stroke-width="6"/>
+  <rect x="330" y="140" width="180" height="230" fill="none" stroke="#1B2620" stroke-width="8"/>
+  <circle cx="420" cy="230" r="46" fill="#2F4B3C" opacity="0.85"/>
+  <rect x="550" y="180" width="150" height="190" fill="none" stroke="#B08900" stroke-width="8"/>
+  <rect x="570" y="200" width="110" height="150" fill="#EFF3ED"/>
+  <rect x="0" y="500" width="800" height="100" fill="#DDE3DC"/>
+  <rect x="40" y="480" width="60" height="120" fill="#5A665F" opacity="0.4"/>
+  <rect x="700" y="480" width="60" height="120" fill="#5A665F" opacity="0.4"/>
+</svg>
