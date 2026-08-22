@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { SingleCardReview } from '@/components/admin/SingleCardReview';
 
 /**
  * Curator admin dashboard page component (`/admin`).
@@ -30,11 +31,7 @@ export default function AdminDashboardPage() {
           </div>
         </header>
 
-        <div className="rounded-lg border border-border bg-bg-elevated p-6 text-center">
-          <p className="text-fg-muted">
-            Airlock queue initialized. Pending raw deal reviews ready.
-          </p>
-        </div>
+        <SingleCardReview />
       </div>
     </div>
   );

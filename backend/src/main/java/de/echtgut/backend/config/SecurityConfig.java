@@ -1,5 +1,6 @@
 package de.echtgut.backend.config;
 
+import de.echtgut.backend.exception.SecurityConfigurationException;
 import de.echtgut.backend.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,26 +32,35 @@ public class SecurityConfig {
    *
    * @param http {@link HttpSecurity} builder.
    * @return Built security filter chain.
-   * @throws Exception If authorization configuration fails.
+   * @throws SecurityConfigurationException If authorization filter chain configuration fails to initialize.
    */
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.csrf(AbstractHttpConfigurer::disable)
-        .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .exceptionHandling(
-            ex ->
-                ex.authenticationEntryPoint(
-                    (request, response, authException) ->
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
-        .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers("/api/admin/**")
-                    .hasAnyRole("CURATOR", "ADMIN")
-                    .anyRequest()
-                    .permitAll())
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    try {
+      // 1. Disable CSRF for stateless REST API
+      http.csrf(AbstractHttpConfigurer::disable)
+          // 2. Configure stateless session management
+          .sessionManagement(
+              session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+          // 3. Configure authentication entry point for unauthorized requests
+          .exceptionHandling(
+              ex ->
+                  ex.authenticationEntryPoint(
+                      (request, response, authException) ->
+                          response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+          // 4. Gate /api/admin/** routes behind CURATOR or ADMIN roles
+          .authorizeHttpRequests(
+              auth ->
+                  auth.requestMatchers("/api/admin/**")
+                      .hasAnyRole("CURATOR", "ADMIN")
+                      .anyRequest()
+                      .permitAll())
+          // 5. Add custom JWT authentication filter before standard username/password filter
+          .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-    return http.build();
+      return http.build();
+    } catch (Exception e) {
+      throw new SecurityConfigurationException("Failed to configure SecurityFilterChain", e);
+    }
   }
 }

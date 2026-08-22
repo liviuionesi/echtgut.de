@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import AdminDashboardPage from '../app/admin/page';
+
+vi.mock('../lib/api', () => ({
+  fetchNextPendingDeal: vi.fn().mockResolvedValue(null),
+  promoteDeal: vi.fn(),
+  rejectDeal: vi.fn(),
+}));
 
 /**
  * Test suite for the curator admin portal dashboard (`AdminDashboardPage`).
@@ -9,19 +15,17 @@ import AdminDashboardPage from '../app/admin/page';
  */
 describe('AdminDashboardPage', () => {
   /**
-   * Verifies that the curator portal title and initial queue state render properly.
+   * Verifies that the curator portal title and airlock status badge render properly.
    */
-  it('renders curator admin portal title', () => {
+  it('renders curator admin portal title and airlock badge', () => {
     // 1. Given the curator admin page is rendered
     render(<AdminDashboardPage />);
 
     // 2. When inspecting the portal DOM
-    // 3. Then the admin header and airlock status text must be present
+    // 3. Then the admin header and airlock status badge must be present
     expect(
       screen.getByRole('heading', { level: 1, name: 'Curator Admin Portal' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Airlock queue initialized. Pending raw deal reviews ready.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Curator Airlock Active')).toBeInTheDocument();
   });
 });
