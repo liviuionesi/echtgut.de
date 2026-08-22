@@ -2,13 +2,14 @@ package de.echtgut.backend.catalog;
 
 import de.echtgut.backend.catalog.dto.ExperienceDetailDto;
 import de.echtgut.backend.catalog.dto.ExperienceSummaryDto;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface backing public visitor queries and SSG/ISR site generation.
  *
- * <p>Provides filterable listing queries and experience detail lookups.
+ * <p>Provides filterable listing queries, experience detail lookups, and click tracking.
  */
 public interface CatalogService {
 
@@ -36,4 +37,14 @@ public interface CatalogService {
    * @return {@link ExperienceDetailDto} payload.
    */
   ExperienceDetailDto getExperienceBySlug(String slug);
+
+  /**
+   * Records a visitor click event and determines destination redirect URL.
+   *
+   * @param experienceId UUID experience identifier.
+   * @param referrer HTTP Referer header.
+   * @param userAgent HTTP User-Agent header.
+   * @return Destination redirect URL.
+   */
+  String recordClickAndGetRedirectUrl(UUID experienceId, String referrer, String userAgent);
 }

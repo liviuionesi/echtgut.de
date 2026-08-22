@@ -1,6 +1,8 @@
 package de.echtgut.backend.catalog;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,9 +27,11 @@ class PublicCatalogControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private CuratedExperienceRepository curatedExperienceRepository;
+  @Autowired private ClickEventRepository clickEventRepository;
 
   @BeforeEach
   void setUp() {
+    clickEventRepository.deleteAllInBatch();
     curatedExperienceRepository.deleteAllInBatch();
   }
 
@@ -97,5 +101,36 @@ class PublicCatalogControllerTest {
   @DisplayName("4. GET /api/experiences/{slug} returns 404 for non-existent slug")
   void testGetExperienceBySlugNotFound() throws Exception {
     mockMvc.perform(get("/api/experiences/non-existent-slug")).andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("5. POST /api/track/click/{id} records click event and returns redirect URL")
+  void testTrackClickSuccess() throws Exception {
+    CuratedExperience exp =
+        curatedExperienceRepository.saveAndFlush(
+            CuratedExperience.builder()
+                .slug("bio-brotgarten-berlin")
+                .editorialTitle("Bio Brotgarten")
+                .editorialDescription("Fresh sourdough bread")
+                .heroImageUrl("https://img.com/brot.jpg")
+                .address("Kastanienallee 12, Berlin")
+                .lat(BigDecimal.valueOf(52.53))
+                .lng(BigDecimal.valueOf(13.40))
+                .affiliateUrl("https://partner.com/brotgarten")
+                .isPublished(true)
+                .build());
+
+    mockMvc
+        .perform(
+            post("/api/track/click/" + exp.getId())
+                .header("Referer", "https://echtgut.de/experience/bio-brotgarten-berlin")
+                .header("User-Agent", "Mozilla/5.0"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.redirectUrl").value("https://partner.com/brotgarten"));
+
+    assertThat(clickEventRepository.count()).isEqualTo(1);
+    ClickEvent click = clickEventRepository.findAll().get(0);
+    assertThat(click.getExperienceId()).isEqualTo(exp.getId());
+    assertThat(click.getReferrerUrl()).isEqualTo("https://echtgut.de/experience/bio-brotgarten-berlin");
   }
 }

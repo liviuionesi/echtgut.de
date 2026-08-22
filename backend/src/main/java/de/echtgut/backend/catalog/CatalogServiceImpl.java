@@ -6,6 +6,7 @@ import de.echtgut.backend.curation.CuratedExperience;
 import de.echtgut.backend.curation.CuratedExperienceRepository;
 import de.echtgut.backend.exception.ResourceNotFoundException;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CatalogServiceImpl implements CatalogService {
 
   private final CuratedExperienceRepository curatedExperienceRepository;
+  private final ClickEventRepository clickEventRepository;
 
   @Override
   public String getCatalogStatus() {
@@ -77,5 +79,39 @@ public class CatalogServiceImpl implements CatalogService {
 
     // 2. Map entity to detail DTO record
     return ExperienceDetailDto.fromEntity(experience, List.of());
+  }
+
+  @Override
+  @Transactional
+  public String recordClickAndGetRedirectUrl(
+      UUID experienceId, String referrer, String userAgent) {
+    // 1. Retrieve target curated experience entity
+    CuratedExperience experience =
+        curatedExperienceRepository
+            .findById(experienceId)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "Experience not found with ID: " + experienceId));
+
+    // 2. Record click event details
+    ClickEvent click =
+        ClickEvent.builder()
+            .experienceId(experienceId)
+            .referrerUrl(referrer)
+            .userAgent(userAgent)
+            .build();
+    clickEventRepository.save(click);
+
+    // 3. Determine fallback redirect URL hierarchy (affiliateUrl -> bookingContact fallback -> detail slug)
+    if (experience.getAffiliateUrl() != null && !experience.getAffiliateUrl().isBlank()) {
+      return experience.getAffiliateUrl();
+    }
+    if (experience.getBookingContact() != null
+        && (experience.getBookingContact().startsWith("http://")
+            || experience.getBookingContact().startsWith("https://"))) {
+      return experience.getBookingContact();
+    }
+    return "/experience/" + experience.getSlug();
   }
 }

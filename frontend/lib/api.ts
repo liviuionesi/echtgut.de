@@ -174,6 +174,28 @@ export async function fetchExperienceBySlug(slug: string): Promise<PublicExperie
 }
 
 /**
+ * Records an experience click event and returns destination redirect URL (FR-6.1).
+ *
+ * @param id Unique experience UUID.
+ * @returns Object with redirectUrl string.
+ */
+export async function trackExperienceClick(id: string): Promise<{ redirectUrl: string }> {
+  const baseUrl = getBaseUrl();
+  const res = await fetch(`${baseUrl}/api/track/click/${encodeURIComponent(id)}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to track click (${res.status}): ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+/**
  * Fetches taxonomy tags from admin API.
  *
  * @param includeRetired Whether to include retired tags.
