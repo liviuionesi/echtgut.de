@@ -6,8 +6,7 @@
  * Design tokens — "Paper" (light, default) / "Ink" (dark, [data-theme="dark"]).
  * RGB channel triples (not hex) so Tailwind's `rgb(var(--x) / <alpha-value>)`
  * pattern in tailwind.config.js gets opacity support for free (bg-accent/10,
- * text-fg-muted/60, etc.) — the same technique shadcn/ui itself relies on,
- * which matters here since the admin portal is built with shadcn/ui
+ * text-fg-muted/60, etc.) — the same technique shadcn/ui itself relies on
  * (ARCHITECTURE.md §4).
  *
  * Light is the default (no data-theme attribute), per ADR-002 (Atlas

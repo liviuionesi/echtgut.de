@@ -2,6 +2,9 @@ import React from 'react';
 import { fetchTrendingPlaces } from '@/lib/api';
 import { LocationMapWrapper } from '@/components/catalog/location-map-wrapper';
 
+// See app/(public)/page.tsx — same reasoning: live aggregated data, not build-time content.
+export const dynamic = 'force-dynamic';
+
 export default async function MapPage() {
   const trendingPlaces = await fetchTrendingPlaces();
 

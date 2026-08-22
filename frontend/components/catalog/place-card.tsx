@@ -15,17 +15,19 @@ export function PlaceCard({ place }: { place: PlaceDto }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* Badges overlay */}
+        {/* Badges overlay — openNow is only rendered when the source actually reports it
+            (OSM doesn't); showing neither state is more honest than guessing "closed". */}
         <div className="absolute left-4 top-4 flex gap-2">
-          {place.openNow ? (
-            <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-              Geöffnet
-            </span>
-          ) : (
-            <span className="rounded-full bg-red-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-              Geschlossen
-            </span>
-          )}
+          {place.openNow !== undefined &&
+            (place.openNow ? (
+              <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                Geöffnet
+              </span>
+            ) : (
+              <span className="rounded-full bg-red-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                Geschlossen
+              </span>
+            ))}
           <span className="rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
             {place.category}
           </span>
@@ -35,13 +37,19 @@ export function PlaceCard({ place }: { place: PlaceDto }) {
         <div className="absolute bottom-4 left-4 right-4">
           <h3 className="mb-1 text-xl font-bold text-white drop-shadow-md">{place.name}</h3>
 
-          <div className="flex items-center gap-4 text-sm text-white/90">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold">{place.rating.toFixed(1)}</span>
-              <span className="text-white/70">({place.reviewCount})</span>
+          {/* rating is absent (not zero) whenever the source has no real rating data
+              (OSM) — omit the badge entirely rather than show a fabricated score. */}
+          {place.rating !== undefined && (
+            <div className="flex items-center gap-4 text-sm text-white/90">
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold">{place.rating.toFixed(1)}</span>
+                {place.reviewCount !== undefined && (
+                  <span className="text-white/70">({place.reviewCount})</span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 /**
- * Types and API client helpers for Curator Admin Portal and Public Marketplace endpoints.
+ * Types and API client helpers for the public catalog (ADR-003: live-aggregated places, no
+ * curator-facing endpoints remain — see docs/ARCHITECTURE.md §3).
  */
 
 export interface TagDto {
@@ -11,6 +12,10 @@ export interface TagDto {
   description?: string;
 }
 
+/**
+ * One aggregated place as served by `GET /api/places/trending`. `rating`/`reviewCount`/`openNow`
+ * are absent whenever the source (OSM) has no such data — never a fabricated placeholder value.
+ */
 export interface PlaceDto {
   id: string;
   name: string;
@@ -19,247 +24,15 @@ export interface PlaceDto {
   address: string;
   lat: number;
   lon: number;
-  rating: number;
-  reviewCount: number;
-  openNow: boolean;
+  rating?: number;
+  reviewCount?: number;
+  openNow?: boolean;
   imageUrl: string;
-}
-
-export interface CreateTagApiRequest {
-  name: string;
-  slug?: string;
-  category?: string;
-}
-
-export interface PublicExperienceSummary {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  heroImageUrl: string;
-  address: string;
-  lat: number;
-  lng: number;
-  publishedAt: string;
-  tags: string[];
-}
-
-export interface PublicExperienceDetail {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  heroImageUrl: string;
-  address: string;
-  lat: number;
-  lng: number;
-  affiliateUrl?: string | null;
-  bookingContact?: string | null;
-  publishedAt: string;
-  tags: string[];
-}
-
-export interface PaginatedExperiencesResponse {
-  content: PublicExperienceSummary[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
-
-export interface RawDealResponse {
-  id: string;
-  source: string;
-  sourceRef: string;
-  rawTitle: string;
-  rawDescription: string | null;
-  rawImageUrl: string | null;
-  locationText: string | null;
-  lat: number | null;
-  lng: number | null;
-  priceHint: string | null;
-  status: 'PENDING' | 'REJECTED' | 'PROMOTED';
-  rejectionReason?: string | null;
-  submittedBy?: string | null;
-  promotedExperienceId?: string | null;
-  ingestedAt?: string | null;
-  reviewedAt?: string | null;
-}
-
-export interface PromoteDealRequest {
-  slug?: string;
-  editorialTitle: string;
-  editorialDescription: string;
-  heroImageUrl: string;
-  address: string;
-  lat: number;
-  lng: number;
-  affiliateUrl?: string;
-  bookingContact?: string;
-  curatorNotes?: string;
-  isPublished?: boolean;
-  tags?: string[];
-}
-
-export interface CuratedExperienceResponse {
-  id: string;
-  rawDealId: string;
-  slug: string;
-  title: string;
-  description: string;
-  heroImageUrl: string;
-  address: string;
-  lat: number;
-  lng: number;
-  affiliateUrl?: string | null;
-  bookingContact?: string | null;
-  curatorNotes?: string | null;
-  isPublished: boolean;
-  publishedAt?: string | null;
-  updatedAt?: string | null;
-}
-
-export interface RejectDealRequest {
-  reason?: string;
 }
 
 const getBaseUrl = (): string => {
   return process.env.NEXT_PUBLIC_API_URL || '';
 };
-
-/**
- * Fetches public published experience summaries for marketplace catalog.
- *
- * @param tag Optional tag slug filter.
- * @param query Optional search query filter.
- * @param page Page index (0-based).
- * @param size Page size.
- * @returns PaginatedExperiencesResponse object.
- */
-export async function fetchPublicExperiences(
-  tag?: string,
-  query?: string,
-  page = 0,
-  size = 20,
-): Promise<PaginatedExperiencesResponse> {
-  const baseUrl = getBaseUrl();
-  const params = new URLSearchParams();
-  if (tag) params.append('tag', tag);
-  if (query) params.append('query', query);
-  params.append('page', page.toString());
-  params.append('size', size.toString());
-
-  const url = `${baseUrl}/api/experiences?${params.toString()}`;
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    next: { revalidate: 60 },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch public experiences: ${res.statusText}`);
-  }
-
-  return res.json();
-}
-
-/**
- * Submits a new local gem (Story #40) for curator review.
- * @param payload The submission payload
- */
-export async function submitLocalGem(payload: {
-  name: string;
-  address: string;
-  description: string;
-}): Promise<void> {
-  const response = await fetch(`${getBaseUrl()}/api/submissions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    // Use Next.js 13+ standard cache options to ensure fresh submissions
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later.');
-    }
-    throw new Error(`Failed to submit local gem: ${response.statusText}`);
-  }
-}
-
-/**
- * Fetches single public published experience detail payload by slug.
- *
- * @param slug Unique URL routing slug.
- * @returns PublicExperienceDetail object.
- */
-export async function fetchExperienceBySlug(slug: string): Promise<PublicExperienceDetail> {
-  const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/experiences/${encodeURIComponent(slug)}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    next: { revalidate: 60 },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch experience detail (${res.status}): ${res.statusText}`);
-  }
-
-  return res.json();
-}
-
-/**
- * Records an experience click event and returns destination redirect URL (FR-6.1).
- *
- * @param id Unique experience UUID.
- * @returns Object with redirectUrl string.
- */
-export async function trackExperienceClick(id: string): Promise<{ redirectUrl: string }> {
-  const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/track/click/${encodeURIComponent(id)}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to track click (${res.status}): ${res.statusText}`);
-  }
-
-  return res.json();
-}
-
-/**
- * Fetches taxonomy tags from admin API.
- *
- * @param includeRetired Whether to include retired tags.
- * @returns Array of TagResponse objects.
- */
-export async function fetchAdminTags(includeRetired = false): Promise<TagDto[]> {
-  const baseUrl = getBaseUrl();
-  const url = `${baseUrl}/api/admin/tags${includeRetired ? '?includeRetired=true' : ''}`;
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch tags: ${res.statusText}`);
-  }
-
-  return res.json();
-}
 
 /**
  * Fetches public taxonomy tags (excluding retired ones).
@@ -293,110 +66,4 @@ export async function fetchTrendingPlaces(): Promise<PlaceDto[]> {
   }
 
   return response.json();
-}
-
-/**
- * Creates a new taxonomy tag.
- *
- * @param payload Create tag request payload.
- * @returns Created TagResponse object.
- */
-export async function createAdminTag(payload: CreateTagApiRequest): Promise<TagResponse> {
-  const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/admin/tags`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text().catch(() => '');
-    throw new Error(`Failed to create tag (${res.status}): ${errorText || res.statusText}`);
-  }
-
-  return res.json();
-}
-
-/**
- * Fetches the next pending raw deal candidate for curator review.
- *
- * @returns Pending deal or null if status code is 204 (queue empty).
- */
-export async function fetchNextPendingDeal(): Promise<RawDealResponse | null> {
-  const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/admin/pending-deals`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  if (res.status === 204) {
-    return null;
-  }
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch pending deal: ${res.statusText}`);
-  }
-
-  return res.json();
-}
-
-/**
- * Promotes a raw candidate deal into a curated experience.
- *
- * @param id Raw deal candidate UUID.
- * @param payload Promotion data payload.
- * @returns Promoted curated experience response.
- */
-export async function promoteDeal(
-  id: string,
-  payload: PromoteDealRequest,
-): Promise<CuratedExperienceResponse> {
-  const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/admin/deals/${id}/promote`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text().catch(() => '');
-    throw new Error(`Failed to promote deal (${res.status}): ${errorText || res.statusText}`);
-  }
-
-  return res.json();
-}
-
-/**
- * Rejects a raw candidate deal with an optional reason.
- *
- * @param id Raw deal candidate UUID.
- * @param payload Optional rejection reason payload.
- * @returns Updated raw deal response.
- */
-export async function rejectDeal(
-  id: string,
-  payload?: RejectDealRequest,
-): Promise<RawDealResponse> {
-  const baseUrl = getBaseUrl();
-  const res = await fetch(`${baseUrl}/api/admin/deals/${id}/reject`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload || {}),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text().catch(() => '');
-    throw new Error(`Failed to reject deal (${res.status}): ${errorText || res.statusText}`);
-  }
-
-  return res.json();
 }

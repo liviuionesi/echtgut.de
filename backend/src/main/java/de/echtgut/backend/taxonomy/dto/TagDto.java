@@ -13,7 +13,8 @@ import java.util.UUID;
  * @param isRetired Whether tag is retired from selection.
  * @param description Short editorial description of the tag.
  */
-public record TagDto(UUID id, String slug, String name, String category, boolean isRetired, String description) {
+public record TagDto(
+    UUID id, String slug, String name, String category, boolean isRetired, String description) {
 
   /**
    * Static factory creating DTO from entity.

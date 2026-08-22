@@ -1,137 +1,95 @@
 package de.echtgut.backend.catalog;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import de.echtgut.backend.curation.CuratedExperience;
-import de.echtgut.backend.curation.CuratedExperienceRepository;
-import java.math.BigDecimal;
-import org.junit.jupiter.api.BeforeEach;
+import de.echtgut.backend.catalog.dto.PlaceDto;
+import de.echtgut.backend.taxonomy.TaxonomyService;
+import de.echtgut.backend.taxonomy.dto.TagDto;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Transactional
-@ActiveProfiles("test")
+/**
+ * Web-layer tests for {@link PublicCatalogController}. Both collaborators are mocked — this
+ * controller has no persistence of its own (ADR-003: places are fetched live, never stored), so
+ * there's nothing here for {@code @SpringBootTest}/a real database to add.
+ */
+@WebMvcTest(PublicCatalogController.class)
 class PublicCatalogControllerTest {
 
   @Autowired private MockMvc mockMvc;
-  @Autowired private CuratedExperienceRepository curatedExperienceRepository;
-  @Autowired private ClickEventRepository clickEventRepository;
-
-  @BeforeEach
-  void setUp() {
-    clickEventRepository.deleteAllInBatch();
-    curatedExperienceRepository.deleteAllInBatch();
-  }
+  @MockitoBean private TaxonomyService taxonomyService;
+  @MockitoBean private PlaceAggregatorService placeAggregatorService;
 
   @Test
-  @DisplayName("1. Unauthenticated request to GET /api/experiences succeeds with 200 OK")
-  void testGetExperiencesPublicAccess() throws Exception {
-    mockMvc.perform(get("/api/experiences")).andExpect(status().isOk());
-  }
-
-  @Test
-  @DisplayName("2. Returns published experiences only")
-  void testGetExperiencesPublishedOnly() throws Exception {
-    curatedExperienceRepository.saveAndFlush(
-        CuratedExperience.builder()
-            .slug("published-spa")
-            .editorialTitle("Published Spa")
-            .editorialDescription("Pristine spa experience")
-            .heroImageUrl("https://img.com/spa.jpg")
-            .address("Spaweg 1, Berlin")
-            .lat(BigDecimal.valueOf(52.52))
-            .lng(BigDecimal.valueOf(13.40))
-            .isPublished(true)
-            .build());
-
-    curatedExperienceRepository.saveAndFlush(
-        CuratedExperience.builder()
-            .slug("draft-spa")
-            .editorialTitle("Draft Spa")
-            .editorialDescription("Draft description")
-            .heroImageUrl("https://img.com/draft.jpg")
-            .address("Spaweg 2, Berlin")
-            .lat(BigDecimal.valueOf(52.52))
-            .lng(BigDecimal.valueOf(13.40))
-            .isPublished(false)
-            .build());
-
-    mockMvc
-        .perform(get("/api/experiences"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content.length()").value(1))
-        .andExpect(jsonPath("$.content[0].slug").value("published-spa"));
-  }
-
-  @Test
-  @DisplayName("3. GET /api/experiences/{slug} returns detail view for published experience")
-  void testGetExperienceBySlugSuccess() throws Exception {
-    curatedExperienceRepository.saveAndFlush(
-        CuratedExperience.builder()
-            .slug("bio-brotgarten-berlin")
-            .editorialTitle("Bio Brotgarten")
-            .editorialDescription("Fresh sourdough bread")
-            .heroImageUrl("https://img.com/brot.jpg")
+  @DisplayName("1. GET /api/places/trending returns the aggregator's live places")
+  void testGetTrendingPlaces() throws Exception {
+    PlaceDto place =
+        PlaceDto.builder()
+            .id("ChIJ-real-google-place-id")
+            .name("Bio Brotgarten")
+            .description("Entdeckt via Google Places API: Bio Brotgarten")
+            .category("Bakery")
             .address("Kastanienallee 12, Berlin")
-            .lat(BigDecimal.valueOf(52.53))
-            .lng(BigDecimal.valueOf(13.40))
-            .isPublished(true)
-            .build());
+            .lat(52.53)
+            .lon(13.40)
+            .rating(4.7)
+            .reviewCount(823)
+            .openNow(true)
+            .imageUrl("https://example.com/brot.jpg")
+            .build();
+    when(placeAggregatorService.getTrendingPlacesInStuttgart()).thenReturn(List.of(place));
 
     mockMvc
-        .perform(get("/api/experiences/bio-brotgarten-berlin"))
+        .perform(get("/api/places/trending"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("Bio Brotgarten"))
-        .andExpect(jsonPath("$.address").value("Kastanienallee 12, Berlin"));
+        .andExpect(jsonPath("$[0].id").value("ChIJ-real-google-place-id"))
+        .andExpect(jsonPath("$[0].name").value("Bio Brotgarten"))
+        .andExpect(jsonPath("$[0].rating").value(4.7));
   }
 
   @Test
-  @DisplayName("4. GET /api/experiences/{slug} returns 404 for non-existent slug")
-  void testGetExperienceBySlugNotFound() throws Exception {
-    mockMvc.perform(get("/api/experiences/non-existent-slug")).andExpect(status().isNotFound());
+  @DisplayName("2. GET /api/places/trending omits rating fields the aggregator left unset")
+  void testGetTrendingPlacesWithoutRating() throws Exception {
+    PlaceDto unrated =
+        PlaceDto.builder()
+            .id("osm-123456")
+            .name("Schlossgarten")
+            .description("Ein faszinierender Ort, der darauf wartet, entdeckt zu werden.")
+            .category("Historisch")
+            .address("Stuttgart")
+            .lat(48.78)
+            .lon(9.18)
+            .imageUrl("https://example.com/placeholder.jpg")
+            .build();
+    when(placeAggregatorService.getTrendingPlacesInStuttgart()).thenReturn(List.of(unrated));
+
+    mockMvc
+        .perform(get("/api/places/trending"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value("osm-123456"))
+        .andExpect(jsonPath("$[0].rating").doesNotExist());
   }
 
   @Test
-  @DisplayName("5. POST /api/track/click/{id} records click event and returns redirect URL")
-  void testTrackClickSuccess() throws Exception {
-    CuratedExperience exp =
-        curatedExperienceRepository.saveAndFlush(
-            CuratedExperience.builder()
-                .slug("bio-brotgarten-berlin")
-                .editorialTitle("Bio Brotgarten")
-                .editorialDescription("Fresh sourdough bread")
-                .heroImageUrl("https://img.com/brot.jpg")
-                .address("Kastanienallee 12, Berlin")
-                .lat(BigDecimal.valueOf(52.53))
-                .lng(BigDecimal.valueOf(13.40))
-                .affiliateUrl("https://partner.com/brotgarten")
-                .isPublished(true)
-                .build());
+  @DisplayName("3. GET /api/tags returns active tags from the taxonomy service")
+  void testGetPublicTags() throws Exception {
+    TagDto tag =
+        new TagDto(
+            java.util.UUID.randomUUID(), "auszeit", "Auszeit", "MOOD", false, "Zeit für dich");
+    when(taxonomyService.getAllTags(anyBoolean())).thenReturn(List.of(tag));
 
     mockMvc
-        .perform(
-            post("/api/track/click/" + exp.getId())
-                .header("Referer", "https://echtgut.de/experience/bio-brotgarten-berlin")
-                .header("User-Agent", "Mozilla/5.0"))
+        .perform(get("/api/tags"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.redirectUrl").value("https://partner.com/brotgarten"));
-
-    assertThat(clickEventRepository.count()).isEqualTo(1);
-    ClickEvent click = clickEventRepository.findAll().get(0);
-    assertThat(click.getExperienceId()).isEqualTo(exp.getId());
-    assertThat(click.getReferrerUrl())
-        .isEqualTo("https://echtgut.de/experience/bio-brotgarten-berlin");
+        .andExpect(jsonPath("$[0].slug").value("auszeit"));
   }
 }

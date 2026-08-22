@@ -3,6 +3,11 @@ import { fetchTrendingPlaces, PlaceDto } from '@/lib/api';
 import { PlaceCard } from '@/components/catalog/place-card';
 import { MapPin, Sparkles, Navigation } from 'lucide-react';
 
+// Renders per-request rather than at build time — this page's data is a live aggregation
+// (Google Places/OSM), not something with a build-time value; forcing static generation here
+// would require a reachable backend during `next build` (and CI/deploy have none).
+export const dynamic = 'force-dynamic';
+
 export default async function PublicHomePage() {
   const trendingPlaces = await fetchTrendingPlaces();
 

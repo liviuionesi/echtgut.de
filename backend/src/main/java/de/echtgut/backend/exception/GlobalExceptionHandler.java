@@ -31,48 +31,6 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
 
-  /** Handles {@link InvalidDealOperationException} returning HTTP 400 BAD_REQUEST. */
-  @ExceptionHandler(InvalidDealOperationException.class)
-  public ResponseEntity<ErrorResponse> handleInvalidDealOperationException(
-      InvalidDealOperationException ex, HttpServletRequest request) {
-    log.warn("Invalid deal operation: {}", ex.getMessage());
-    ErrorResponse error =
-        new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(),
-            HttpStatus.BAD_REQUEST.getReasonPhrase(),
-            ex.getMessage(),
-            request.getRequestURI());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-  }
-
-  /** Handles {@link UnauthorizedException} returning HTTP 401 UNAUTHORIZED. */
-  @ExceptionHandler(UnauthorizedException.class)
-  public ResponseEntity<ErrorResponse> handleUnauthorizedException(
-      UnauthorizedException ex, HttpServletRequest request) {
-    log.warn("Unauthorized request: {}", ex.getMessage());
-    ErrorResponse error =
-        new ErrorResponse(
-            HttpStatus.UNAUTHORIZED.value(),
-            HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-            ex.getMessage(),
-            request.getRequestURI());
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-  }
-
-  /** Handles {@link RateLimitExceededException} returning HTTP 429 TOO_MANY_REQUESTS. */
-  @ExceptionHandler(RateLimitExceededException.class)
-  public ResponseEntity<ErrorResponse> handleRateLimitExceededException(
-      RateLimitExceededException ex, HttpServletRequest request) {
-    log.warn("Rate limit exceeded: {}", ex.getMessage());
-    ErrorResponse error =
-        new ErrorResponse(
-            HttpStatus.TOO_MANY_REQUESTS.value(),
-            HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
-            ex.getMessage(),
-            request.getRequestURI());
-    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
-  }
-
   /**
    * Handles {@link MethodArgumentNotValidException} validation errors returning HTTP 400
    * BAD_REQUEST.

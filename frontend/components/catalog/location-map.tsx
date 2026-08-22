@@ -1,12 +1,10 @@
 'use client';
 
-import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { PlaceDto } from '@/lib/api';
 import { Star } from 'lucide-react';
-import Image from 'next/image';
 
 interface LocationMapProps {
   places?: PlaceDto[];
@@ -69,11 +67,15 @@ export default function LocationMap({
                 <div className="bg-bg p-3 text-fg">
                   <h4 className="mb-1 text-sm font-bold">{place.name}</h4>
                   <p className="mb-2 line-clamp-2 text-xs text-fg-muted">{place.category}</p>
-                  <div className="flex items-center gap-1 text-xs">
-                    <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                    <span>{place.rating.toFixed(1)}</span>
-                    <span className="text-fg-muted">({place.reviewCount})</span>
-                  </div>
+                  {place.rating !== undefined && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                      <span>{place.rating.toFixed(1)}</span>
+                      {place.reviewCount !== undefined && (
+                        <span className="text-fg-muted">({place.reviewCount})</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </Popup>

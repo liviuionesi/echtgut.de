@@ -40,28 +40,6 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
-  void testHandleInvalidDealOperationException() {
-    InvalidDealOperationException ex = new InvalidDealOperationException("Invalid operation");
-    ResponseEntity<ErrorResponse> response =
-        handler.handleInvalidDealOperationException(ex, request);
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().status()).isEqualTo(400);
-    assertThat(response.getBody().message()).isEqualTo("Invalid operation");
-  }
-
-  @Test
-  void testHandleUnauthorizedException() {
-    UnauthorizedException ex = new UnauthorizedException("Unauthorized access");
-    ResponseEntity<ErrorResponse> response = handler.handleUnauthorizedException(ex, request);
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().status()).isEqualTo(401);
-  }
-
-  @Test
   void testHandleMethodArgumentNotValidException() {
     BindingResult bindingResult = mock(BindingResult.class);
     FieldError fieldError = new FieldError("object", "field", "must not be blank");

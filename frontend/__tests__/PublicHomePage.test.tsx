@@ -1,77 +1,79 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import PublicHomePage from '../app/(public)/page';
+import * as api from '@/lib/api';
+
+vi.mock('@/lib/api', () => ({
+  fetchTrendingPlaces: vi.fn(),
+}));
 
 /**
  * Test suite for the public landing page component (`PublicHomePage`).
  *
- * Verifies that essential branding elements render, and — since the Atlas
- * Obscura-inspired redesign (ADR-002, Epic #49) — that the page also
- * showcases the new editorial components (`ExploreByMood`, `ExperienceCard`,
- * `PracticalInfoPanel`) against sample content.
+ * Since ADR-003's pivot to automated aggregation, the homepage is an async Server Component
+ * rendering the live `fetchTrendingPlaces()` result as a `PlaceCard` grid — the previous
+ * editorial-redesign sample content (`ExploreByMood`, `ExperienceCard`, `PracticalInfoPanel`)
+ * was removed with the pipeline it showcased. `fetchTrendingPlaces` is mocked so tests never hit
+ * a real network call, and the async component is awaited before rendering (React Testing
+ * Library can't render a function that returns a Promise directly).
  */
 describe('PublicHomePage', () => {
   /**
-   * Verifies that the primary brand title and subtitle render correctly on initial paint.
+   * Verifies that the hero headline renders on initial paint.
    */
-  it('renders the headline and description', () => {
-    // 1. Given the public home page is rendered
-    render(<PublicHomePage />);
+  it('renders the hero headline', async () => {
+    // 1. Given the aggregator returns no places
+    vi.mocked(api.fetchTrendingPlaces).mockResolvedValue([]);
 
-    // 2. When inspecting the document DOM
-    // 3. Then the brand heading and subtitle text must be visible
-    expect(screen.getByRole('heading', { level: 1, name: 'echtgut.de' })).toBeInTheDocument();
+    // 2. When the (async) home page is rendered
+    render(await PublicHomePage());
+
+    // 3. Then the hero heading is present
     expect(
-      screen.getByText('Handverlesene, geprüfte lokale Geheimtipps und Erlebnisse.'),
+      screen.getByRole('heading', { level: 1, name: /Entdecke die besten Orte/i }),
     ).toBeInTheDocument();
   });
 
   /**
-   * Verifies the "Explore by mood" taxonomy grid is present with FR-4.1's example tags.
+   * Verifies a PlaceCard renders for each place the aggregator returns.
    */
-  it('renders the "Explore by mood" taxonomy grid with the FR-4.1 example tags', () => {
-    // 1. Given the public home page is rendered
-    render(<PublicHomePage />);
+  it('renders a PlaceCard for each aggregated place', async () => {
+    // 1. Given the aggregator returns one place
+    vi.mocked(api.fetchTrendingPlaces).mockResolvedValue([
+      {
+        id: 'ChIJ-real-google-place-id',
+        name: 'Bio Brotgarten',
+        description: 'Entdeckt via Google Places API: Bio Brotgarten',
+        category: 'Bakery',
+        address: 'Kastanienallee 12, Berlin',
+        lat: 52.53,
+        lon: 13.4,
+        rating: 4.7,
+        reviewCount: 823,
+        openNow: true,
+        imageUrl: 'https://example.com/brot.jpg',
+      },
+    ]);
 
-    // 2. When inspecting the Explore by mood section
-    // 3. Then all three FR-4.1 example taxonomy tags are present as tiles
-    expect(screen.getByRole('heading', { name: 'Entdecke nach Stimmung' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Relaxation/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Fix My Back/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Rainy Day/i })).toBeInTheDocument();
+    // 2. When the (async) home page is rendered
+    render(await PublicHomePage());
+
+    // 3. Then the place's card content is present
+    expect(screen.getByText('Bio Brotgarten')).toBeInTheDocument();
+    expect(screen.getByText('Kastanienallee 12, Berlin')).toBeInTheDocument();
   });
 
   /**
-   * Verifies a photo-led ExperienceCard renders for each sample listing.
+   * Verifies the empty-state message renders when the aggregator returns nothing.
    */
-  it('renders a sample ExperienceCard grid', () => {
-    // 1. Given the public home page is rendered
-    render(<PublicHomePage />);
+  it('renders an empty-state message when no places are returned', async () => {
+    // 1. Given the aggregator returns no places
+    vi.mocked(api.fetchTrendingPlaces).mockResolvedValue([]);
 
-    // 2. When inspecting the sample listings section
-    // 3. Then the sample experience titles render as card headings — the first
-    //    sample (the featured item) appears twice: once as its card heading,
-    //    once as the detail-showcase narrative heading below.
-    expect(
-      screen.getAllByRole('heading', { name: 'Die Sauna am Waldsee, die niemand kennt' }),
-    ).toHaveLength(2);
-    expect(
-      screen.getByRole('heading', {
-        name: 'Das Atelier im Hinterhof, das aussieht wie ein Museum',
-      }),
-    ).toBeInTheDocument();
-  });
+    // 2. When the (async) home page is rendered
+    render(await PublicHomePage());
 
-  /**
-   * Verifies the PracticalInfoPanel showcase renders with team-level attribution.
-   */
-  it('renders the PracticalInfoPanel showcase with team-level attribution', () => {
-    // 1. Given the public home page is rendered
-    render(<PublicHomePage />);
-
-    // 2. When inspecting the sample detail showcase section
-    // 3. Then the Practical Info panel's booking CTA and attribution are present
-    expect(screen.getByRole('link', { name: 'Termin anfragen' })).toBeInTheDocument();
-    expect(screen.getByText('Kuratiert vom echtgut-Team')).toBeInTheDocument();
+    // 3. Then the empty-state message is shown instead of a card grid
+    expect(screen.getByText(/Keine Orte gefunden/i)).toBeInTheDocument();
   });
 });

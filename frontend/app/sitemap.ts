@@ -1,31 +1,16 @@
 import { MetadataRoute } from 'next';
-import { fetchPublicExperiences } from '@/lib/api';
 
 /**
  * Dynamic sitemap generator for Next.js App Router.
  *
- * Generates XML sitemap index entries for the root marketplace and all published
- * experience detail pages.
+ * Generates the site's sitemap entries. Since ADR-003's pivot to live aggregation, there is no
+ * per-place detail page or stable slug to enumerate — places are fetched live from Google
+ * Places/OSM, not persisted — so this lists only the static routes.
  *
  * @returns Array of sitemap route objects.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://echtgut.de';
-
-  let experiences: Array<{ slug: string; publishedAt: string }> = [];
-  try {
-    const res = await fetchPublicExperiences(undefined, undefined, 0, 100);
-    experiences = res.content || [];
-  } catch {
-    experiences = [];
-  }
-
-  const experienceUrls: MetadataRoute.Sitemap = experiences.map((exp) => ({
-    url: `${baseUrl}/experience/${exp.slug}`,
-    lastModified: exp.publishedAt ? new Date(exp.publishedAt) : new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
 
   return [
     {
@@ -34,6 +19,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1.0,
     },
-    ...experienceUrls,
+    {
+      url: `${baseUrl}/map`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
   ];
 }
